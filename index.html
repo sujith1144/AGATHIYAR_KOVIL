@@ -1,124 +1,160 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Zyrex Home Dashboard</title>
+    <title>AGATHIYAR KOVIL CONTROL</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        :root { --bg: #0f172a; --card: #1e293b; --on: #10b981; --off: #ef4444; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #f1f5f9; margin: 0; padding: 20px; }
+        :root { --bg: #0b0e14; --panel: #161b22; --accent: #238636; --text: #c9d1d9; --red: #f85149; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         
-        /* PING / CONNECTIVITY INDICATOR */
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .conn-box { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; transition: 0.5s; border: 1px solid transparent; }
-        .online { color: #10b981; border-color: #10b981; background: rgba(16, 185, 129, 0.1); }
-        .offline { color: #ef4444; border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        /* LOGIN PAGE */
+        #loginOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .login-box { background: var(--panel); padding: 30px; border-radius: 10px; border: 1px solid #30363d; width: 300px; text-align: center; }
+        input[type="password"], input[type="datetime-local"] { width: 100%; padding: 10px; margin: 10px 0; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: white; box-sizing: border-box; }
+        .login-btn { width: 100%; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 15px; }
-        .card { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid #334155; text-align: center; }
-        .status-display { font-size: 28px; font-weight: 800; margin: 15px 0; cursor: pointer; }
+        /* HEADER & CONNECTIVITY */
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 15px; margin-bottom: 20px; }
+        .ping-indicator { font-size: 12px; font-weight: bold; padding: 5px 12px; border-radius: 20px; }
+        .status-online { color: #3fb950; border: 1px solid #3fb950; background: rgba(63, 185, 80, 0.1); }
+        .status-offline { color: #f85149; border: 1px solid #f85149; background: rgba(248, 81, 73, 0.1); }
+
+        /* GRID */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        .card { background: var(--panel); border: 1px solid #30363d; border-radius: 10px; padding: 20px; text-align: center; }
+        .relay-status { font-size: 32px; font-weight: bold; margin: 15px 0; cursor: pointer; }
         
-        /* TIMER ROW */
-        .timer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #334155; padding-top: 15px; }
-        .timer-text { font-size: 11px; color: #94a3b8; text-align: left; line-height: 1.2; }
-        .btn-set { background: #3b82f6; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        /* TIMER UI */
+        .timer-zone { border-top: 1px solid #30363d; margin-top: 15px; padding-top: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .timer-display { font-size: 10px; color: #8b949e; text-align: left; line-height: 1.3; }
+        .set-btn { background: #1f6feb; border: none; color: white; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: bold; }
 
-        .bottom-bar { margin-top: 40px; display: flex; gap: 10px; }
-        .btn-master { flex: 1; padding: 18px; border: none; border-radius: 12px; font-weight: 900; color: white; cursor: pointer; font-size: 14px; }
+        .master-bar { margin-top: 30px; display: flex; gap: 10px; }
+        .master-btn { flex: 1; padding: 18px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 15px; }
     </style>
 </head>
 <body>
 
+<div id="loginOverlay">
+    <div class="login-box">
+        <h2 style="margin-top:0">🔐 SECURE LOGIN</h2>
+        <input type="password" id="passInput" placeholder="Enter Password">
+        <button class="login-btn" onclick="checkPass()">ENTER SYSTEM</button>
+    </div>
+</div>
+
 <header>
-    <h1 style="margin:0">Zyrex 🕍</h1>
-    <div id="connStatus" class="conn-box offline">NOT CONNECTED</div>
+    <h2 style="margin:0; font-size: 18px;">AGATHIYAR KOVIL CONTROL 🕍</h2>
+    <div id="pinger" class="ping-indicator status-offline">NOT CONNECTED</div>
 </header>
 
-<div class="grid" id="appGrid">
-    </div>
+<div class="grid" id="mainGrid"></div>
 
-<div class="bottom-bar">
-    <button class="btn-master" style="background: var(--on)" onclick="master('allon')">TEMPLE ALL ON</button>
-    <button class="btn-master" style="background: var(--off)" onclick="master('alloff')">TEMPLE ALL OFF</button>
+<div class="master-bar">
+    <button class="master-btn" style="background: var(--accent)" onclick="master('allon')">TEMPLE ALL ON</button>
+    <button class="master-btn" style="background: var(--red)" onclick="master('alloff')">TEMPLE ALL OFF</button>
+</div>
+
+<div id="timerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+    <div class="login-box">
+        <h3>Schedule Device</h3>
+        <input type="datetime-local" id="dtPicker">
+        <select id="stateSelect" style="width:100%; padding:10px; margin-bottom:10px; background:#0d1117; color:white; border-radius:6px; border:1px solid #30363d;">
+            <option value="1">Turn ON</option>
+            <option value="0">Turn OFF</option>
+        </select>
+        <button class="login-btn" onclick="confirmTimer()">SET SCHEDULE</button>
+        <button class="login-btn" style="background:#30363d; margin-top:5px;" onclick="closeModal()">CANCEL</button>
+    </div>
 </div>
 
 <script>
-    const relayNames = ["Om", "Melam-1", "Melam-2", "Agathiyar", "Vinayakar", "Navakiragam", "Source-1", "Source-2"];
-    const topic_cmd = "myhome/kirupakaran/relay/cmd";
-    const topic_status = "myhome/kirupakaran/relay/status";
-    const topic_sched = "myhome/kirupakaran/relay/sched_info";
+    const names = ["Om", "Melam-1", "Melam-2", "Agathiyar", "Vinayakar", "Navakiragam", "Source-1", "Source-2"];
+    let activeCh = 0;
+    
+    function checkPass() {
+        if(document.getElementById('passInput').value === "Agathiyar") {
+            document.getElementById('loginOverlay').style.display = "none";
+        } else {
+            alert("Incorrect Password!");
+        }
+    }
 
-    let mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "zyrex_web_" + Math.random());
+    let client = new Paho.MQTT.Client("broker.emqx.io", 8084, "kovil_web_" + Math.random());
 
-    function createUI() {
-        const grid = document.getElementById('appGrid');
+    function build() {
+        const grid = document.getElementById('mainGrid');
         grid.innerHTML = "";
-        // Displaying in logical order: Temple first
         [1, 4, 5, 6, 2, 3, 7, 8].forEach(ch => {
             grid.innerHTML += `
                 <div class="card">
-                    <div style="font-size: 12px; color: #64748b; font-weight: bold;">${relayNames[ch-1].toUpperCase()}</div>
-                    <div id="val-${ch}" class="status-display" onclick="toggle(${ch})">OFF</div>
-                    <div class="timer-row">
-                        <div class="timer-text" id="label-ch-${ch}">No Timer<br>Set</div>
-                        <button class="btn-set" onclick="openTimer(${ch})">SET TIMER</button>
+                    <div style="font-size: 11px; color: #8b949e; letter-spacing: 1px;">${names[ch-1].toUpperCase()}</div>
+                    <div id="st-${ch}" class="relay-status" onclick="toggle(${ch})">OFF</div>
+                    <div class="timer-zone">
+                        <div class="timer-display" id="lbl-${ch}">No Timer<br>Configured</div>
+                        <button class="set-btn" onclick="openModal(${ch})">SET TIMER</button>
                     </div>
                 </div>
             `;
         });
     }
 
-    mqtt.onConnectionLost = () => {
-        const indicator = document.getElementById('connStatus');
-        indicator.innerText = "NOT CONNECTED";
-        indicator.className = "conn-box offline";
+    client.onConnectionLost = () => {
+        const p = document.getElementById('pinger');
+        p.innerText = "NOT CONNECTED";
+        p.className = "ping-indicator status-offline";
     };
 
-    mqtt.onMessageArrived = (msg) => {
+    client.onMessageArrived = (msg) => {
         const data = JSON.parse(msg.payloadString);
-        if (msg.destinationName === topic_status) {
+        if (msg.destinationName === "myhome/kirupakaran/relay/status") {
             data.states.forEach((s, i) => {
-                const el = document.getElementById(`val-${i+1}`);
+                const el = document.getElementById(`st-${i+1}`);
                 if(el) {
                     el.innerText = s ? "ON" : "OFF";
-                    el.style.color = s ? "var(--on)" : "var(--off)";
+                    el.style.color = s ? "#3fb950" : "#f85149";
                 }
             });
-        } 
-        else if (msg.destinationName === topic_sched) {
-            // Reset labels first
-            for(let i=1; i<=8; i++) document.getElementById(`label-ch-${i}`).innerText = "No Timer\nSet";
-            // Map the active schedules to the UI
+        } else if (msg.destinationName === "myhome/kirupakaran/relay/sched_info") {
+            for(let i=1; i<=8; i++) document.getElementById(`lbl-${i}`).innerText = "No Timer\nConfigured";
             data.forEach(item => {
-                const lbl = document.getElementById(`label-ch-${item.ch}`);
-                if(lbl) lbl.innerText = `${item.time}\n(${item.state?'ON':'OFF'})`;
+                const lbl = document.getElementById(`lbl-${item.ch}`);
+                if(lbl) lbl.innerText = item.time + "\n(" + (item.state?'ON':'OFF') + ")";
             });
         }
     };
 
-    mqtt.connect({ onSuccess: () => {
-        const indicator = document.getElementById('connStatus');
-        indicator.innerText = "CONNECTED";
-        indicator.className = "conn-box online";
-        mqtt.subscribe(topic_status);
-        mqtt.subscribe(topic_sched);
-        mqtt.send(topic_cmd, JSON.stringify({cmd: "request_status"}));
+    client.connect({ onSuccess: () => {
+        const p = document.getElementById('pinger');
+        p.innerText = "CONNECTED";
+        p.className = "ping-indicator status-online";
+        client.subscribe("myhome/kirupakaran/relay/status");
+        client.subscribe("myhome/kirupakaran/relay/sched_info");
+        client.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd: "request_status"}));
     }, useSSL: true });
 
-    function toggle(ch) { mqtt.send(topic_cmd, JSON.stringify({cmd: "toggle", ch: ch})); }
-    function master(c) { mqtt.send(topic_cmd, JSON.stringify({cmd: c})); }
+    function toggle(ch) { client.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:"toggle", ch:ch})); }
+    function master(c) { client.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:c})); }
     
-    function openTimer(ch) {
-        const t = prompt("Schedule Time (24h format HH:MM):", "18:00");
-        if(!t) return;
-        const state = confirm("Should the device turn ON at this time?") ? 1 : 0;
-        mqtt.send(topic_cmd, JSON.stringify({
-            cmd: "schedule", ch: ch, hour: parseInt(t.split(':')[0]), 
-            minute: parseInt(t.split(':')[1]), state: state, days: [0,1,2,3,4,5,6]
-        }));
+    function openModal(ch) { activeCh = ch; document.getElementById('timerModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('timerModal').style.display = 'none'; }
+    
+    function confirmTimer() {
+        const dt = document.getElementById('dtPicker').value; // Returns YYYY-MM-DDTHH:MM
+        if(!dt) return alert("Select Date & Time");
+        const dateObj = new Date(dt);
+        const msg = JSON.stringify({
+            cmd: "schedule", ch: activeCh, 
+            day: dateObj.getDate(), month: dateObj.getMonth() + 1,
+            hour: dateObj.getHours(), minute: dateObj.getMinutes(),
+            state: parseInt(document.getElementById('stateSelect').value)
+        });
+        client.send("myhome/kirupakaran/relay/cmd", msg);
+        closeModal();
     }
 
-    createUI();
+    build();
 </script>
 </body>
 </html>
