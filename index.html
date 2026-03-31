@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zyrex Smart Control</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        :root {
+            --bg: #0d0f14;
+            --primary: #00d2ff;
+            --on: #00ff88;
+            --off: #ff416c;
+            --card: rgba(255,255,255,0.05);
+        }
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .login-box {
+            background: #1a1c23;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0,210,255,0.1);
+            width: 300px;
+        }
+        .login-box input {
+            width: 90%;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border: none;
+            background: #222;
+            color: white;
+            text-align: center;
+            font-size: 16px;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #app-screen {
+            display: none;
+            padding: 20px;
+        }
+        .master-bar {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .master-btn {
+            padding: 15px 30px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .all-on {
+            background: var(--on);
+            color: #000;
+        }
+        .all-off {
+            background: var(--off);
+            color: #fff;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1000px;
+            margin: auto;
+        }
+        .card {
+            background: var(--card);
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+        .card.on {
+            border-color: var(--on);
+            box-shadow: 0 0 15px rgba(0,255,136,0.2);
+        }
+        .card.off {
+            border-color: var(--off);
+        }
+        .status-txt {
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .timer-btn {
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1a1c23;
+            padding: 25px;
+            border-radius: 15px;
+            width: 320px;
+            border: 1px solid #333;
+        }
+        .day-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .day-label {
+            font-size: 12px;
+            background: #222;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="time"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: none;
+            background: #222;
+            color: white;
+        }
+        .save-btn {
+            background: var(--on);
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .cancel-btn {
+            background: #444;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .watermark {
+            position: fixed;
+            bottom: 15px;
+            right: 20px;
+            font-size: 12px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="color: var(--primary);">Zyrex Secure Login</h2>
+            <input type="password" id="passInput" placeholder="Enter Master Password">
+            <button onclick="checkLogin()">LOGIN</button>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <h1 style="color: var(--primary); letter-spacing: 2px;">ZYREX TEMPLE CONTROL</h1>
+        
+        <div class="master-bar">
+            <button class="master-btn all-on" onclick="masterToggle('allon')">ALL ON</button>
+            <button class="master-btn all-off" onclick="masterToggle('alloff')">ALL OFF</button>
+        </div>
+
+        <div class="grid" id="mainGrid"></div>
+    </div>
+
+    <div id="modal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">Set Timer: <span id="mod-name" style="color:var(--primary)"></span></h3>
+            <input type="time" id="sched-time">
+            <div class="day-grid">
+                <label class="day-label"><input type="checkbox" class="day-cb" value="0"> Sun</label>
+                <label class="day-label"><input type="checkbox" class="day-cb" value="1"> Mon</label>
+                <label class="day-label"><input type="checkbox" class="day-cb" value="2"> Tue</label>
+                <label class="day-label"><input type="checkbox" class="day-cb" value="3"> Wed</label>
+                <label class="day-label"><input type="checkbox" class="day-cb" value="4"> Thu</label>
+                <label class="day-label"><input type="checkbox" class="day-cb" value="5"> Fri</label>
+                <label class="day-label"><input type="checkbox" class="day-cb" value="6"> Sat</label>
+            </div>
+            <select id="sched-action">
+                <option value="true">Turn ON</option>
+                <option value="false">Turn OFF</option>
+            </select>
+            <button class="save-btn" onclick="saveSchedule()">SAVE TIMER</button>
+            <button class="cancel-btn" onclick="closeModal()">CANCEL</button>
+        </div>
+    </div>
+
+    <div class="watermark">@zyrex-sujith</div>
+
+    <script>
+        const validHash = "b4a1f718290f9d462bcd6198bb68cc4e4e863618bb21941981cc48d5666fe048";
+
+        async function hashPassword(password) {
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function checkLogin() {
+            const input = document.getElementById("passInput").value;
+            const hashedInput = await hashPassword(input);
+            
+            if (hashedInput === validHash) {
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("app-screen").style.display = "block";
+                initMQTT();
+            } else {
+                alert("Incorrect Password");
+            }
+        }
+
+        const names = ["Om","Melam-1","Melam-2","Agathiyar","Vinayakar","Navakiragam","Source-1","Source-2"];
+        let selectedCh = -1;
+        let client;
+
+        function initMQTT() {
+            client = mqtt.connect("wss://broker.emqx.io:8084/mqtt");
+            const grid = document.getElementById("mainGrid");
+            
+            names.forEach((name, i) => {
+                const card = document.createElement("div");
+                card.className = "card off";
+                card.id = "card-" + (i + 1);
+                card.innerHTML = `
+                    <div style="font-weight: bold; font-size: 1.2rem;">${name}</div>
+                    <div class="status-txt" id="stat-${i + 1}">STATUS: OFF</div>
+                    <button class="timer-btn" onclick="openModal(event, ${i + 1})">⏲ SET TIMER</button>
+                `;
+                
+                card.onclick = (e) => {
+                    if(e.target.tagName !== 'BUTTON') {
+                        const payload = JSON.stringify({cmd: "toggle", ch: i + 1});
+                        client.publish("myhome/kirupakaran/relay/cmd", payload);
+                    }
+                };
+                grid.appendChild(card);
+            });
+
+            client.on("connect", () => {
+                client.subscribe("myhome/kirupakaran/relay/status");
+                const statusReq = JSON.stringify({cmd: "request_status"});
+                client.publish("myhome/kirupakaran/relay/cmd", statusReq);
+            });
+
+            client.on("message", (topic, message) => {
+                const data = JSON.parse(message.toString());
+                data.states.forEach((isOn, i) => {
+                    const card = document.getElementById("card-" + (i + 1));
+                    const txt = document.getElementById("stat-" + (i + 1));
+                    card.className = "card " + (isOn ? "on" : "off");
+                    txt.innerText = "STATUS: " + (isOn ? "ON" : "OFF");
+                });
+            });
+        }
+
+        function masterToggle(action) {
+            const payload = JSON.stringify({cmd: action});
+            client.publish("myhome/kirupakaran/relay/cmd", payload);
+        }
+
+        function openModal(e, ch) {
+            e.stopPropagation();
+            selectedCh = ch;
+            document.getElementById('mod-name').innerText = names[ch-1];
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        function saveSchedule() {
+            const time = document.getElementById('sched-time').value;
+            const dayCheckboxes = document.querySelectorAll('.day-cb:checked');
+            const days = Array.from(dayCheckboxes).map(cb => parseInt(cb.value));
+
+            if(!time || days.length === 0) {
+                alert("Please pick a time and at least one day!");
+                return;
+            }
+
+            const [h, m] = time.split(':');
+            const payload = JSON.stringify({
+                cmd: "schedule",
+                ch: selectedCh,
+                hour: parseInt(h),
+                minute: parseInt(m),
+                days: days,
+                state: document.getElementById('sched-action').value === "true"
+            });
+            
+            client.publish("myhome/kirupakaran/relay/cmd", payload);
+            alert("Timer Saved Successfully!");
+            closeModal();
+        }
+    </script>
+</body>
+</html>
