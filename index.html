@@ -1,105 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>AGATHIYAR KOVIL CONTROL V8</title>
+    <title>AGATHIYAR KOVIL V10 - MULTI-DAY DASHBOARD</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
         :root { --bg: #010409; --panel: #0d1117; --border: #30363d; --text: #c9d1d9; --green: #238636; --red: #da3633; --blue: #1f6feb; --gold: #f2cc60; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 25px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 30px; }
         
-        #loginGate { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .login-card { background: var(--panel); padding: 50px; border-radius: 20px; border: 1px solid var(--border); width: 380px; text-align: center; }
-        input, select { width: 100%; padding: 16px; margin: 15px 0; border-radius: 12px; border: 1px solid var(--border); background: #010409; color: white; font-size: 16px; box-sizing: border-box; }
-        .btn-action { width: 100%; padding: 16px; background: var(--green); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; }
-
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 30px; margin-bottom: 40px; }
-        .speed-box { text-align: right; }
-        .pill { font-size: 12px; font-weight: 900; padding: 10px 20px; border-radius: 10px; text-transform: uppercase; letter-spacing: 2px; border: 1px solid var(--border); }
-        .speed-val { color: var(--gold); font-family: monospace; font-size: 14px; margin-top: 10px; display: block; font-weight: bold; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 35px; }
-        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 25px; padding: 40px; text-align: center; transition: 0.3s; }
-        .card:hover { border-color: var(--blue); box-shadow: 0 0 20px rgba(31, 111, 235, 0.2); }
+        #loginGate { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: var(--panel); padding: 50px; border-radius: 20px; border: 1px solid var(--border); width: 420px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         
-        /* INCREASED APPLIANCE NAME FONT SIZE */
-        .app-name { font-size: 20px; color: #8b949e; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 10px; }
-        .relay-val { font-size: 56px; font-weight: 900; margin: 35px 0; cursor: pointer; transition: 0.2s; }
+        input[type="password"], input[type="time"], select { width: 100%; padding: 16px; margin: 15px 0; border-radius: 12px; border: 1px solid var(--border); background: #010409; color: white; font-size: 16px; box-sizing: border-box; font-weight: bold; }
+        .btn-action { width: 100%; padding: 18px; background: var(--green); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 900; letter-spacing: 2px; }
+
+        header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 40px; margin-bottom: 50px; }
+        .monitor-box { text-align: right; }
+        .pill-status { font-size: 13px; font-weight: 900; padding: 12px 24px; border-radius: 12px; text-transform: uppercase; letter-spacing: 2px; border: 1px solid var(--border); transition: 0.5s; }
+        .net-speed { color: var(--gold); font-family: 'Courier New', monospace; font-size: 16px; margin-top: 15px; display: block; font-weight: 900; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 35px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 25px; padding: 40px; text-align: center; transition: 0.3s; position: relative; }
+        .card:hover { border-color: var(--blue); transform: scale(1.02); }
         
-        .timer-footer { border-top: 1px solid var(--border); margin-top: 35px; padding-top: 30px; display: flex; align-items: center; justify-content: space-between; }
-        .timer-info { font-size: 13px; color: #8b949e; text-align: left; font-family: monospace; font-weight: bold; }
-        .btn-set-timer { background: var(--blue); color: white; border: none; padding: 14px 20px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        /* ADJUSTED TO MID-RANGE FONT SIZE (17px) */
+        .app-name { font-size: 17px; color: #ffffff; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+        .relay-val { font-size: 58px; font-weight: 900; margin: 30px 0; cursor: pointer; transition: 0.3s; }
+        
+        .timer-info { font-size: 13px; color: #8b949e; text-align: left; font-family: 'Courier New', monospace; font-weight: 900; line-height: 1.5; }
+        .btn-set-timer { background: var(--blue); color: white; border: none; padding: 14px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 900; }
 
-        .master-controls { margin-top: 60px; display: flex; gap: 30px; }
-        .btn-master { flex: 1; padding: 28px; border: none; border-radius: 18px; color: white; font-weight: 900; cursor: pointer; font-size: 20px; text-transform: uppercase; }
+        .master-panel { margin-top: 60px; display: flex; gap: 40px; border-top: 1px solid var(--border); padding-top: 40px; }
+        .btn-master { flex: 1; padding: 30px; border: none; border-radius: 18px; color: white; font-weight: 900; cursor: pointer; font-size: 20px; text-transform: uppercase; letter-spacing: 3px; }
 
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; align-items:center; justify-content:center; }
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9000; align-items:center; justify-content:center; }
+        
+        /* MULTI-DAY CHECKBOX GRID CSS */
+        .day-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; text-align: left; }
+        .day-label { color: #c9d1d9; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #010409; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .day-label input[type="checkbox"] { width: 18px; height: 18px; margin: 0; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="loginGate">
     <div class="login-card">
-        <h2 style="color:white; letter-spacing: 4px;">AGATHIYAR SECURITY</h2>
-        <input type="password" id="pBox" placeholder="Enter System Password">
-        <button class="btn-action" onclick="login()">AUTHORIZE ACCESS</button>
+        <h2 style="color:white; letter-spacing: 4px; margin-bottom: 30px;">AGATHIYAR SECURE</h2>
+        <input type="password" id="pBox" placeholder="Enter System Key">
+        <button class="btn-action" onclick="login()">AUTHORIZE NODE</button>
     </div>
 </div>
 
 <header>
     <div>
-        <h1 style="margin:0; font-size: 36px; color: white; letter-spacing: 3px;">AGATHIYAR KOVIL</h1>
-        <p style="margin:0; font-size: 14px; color: #8b949e; font-weight: 900; text-transform: uppercase;">Hardware Control Matrix</p>
+        <h1 style="margin:0; font-size: 38px; color: white; letter-spacing: 4px; font-weight: 900;">AGATHIYAR KOVIL</h1>
+        <p style="margin:5px 0 0 0; font-size: 15px; color: #8b949e; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">V10.0 Multi-Day Control Unit</p>
     </div>
-    <div class="speed-box">
-        <div id="espStatus" class="pill" style="color:#f85149">OFFLINE</div>
-        <span id="speedVal" class="speed-val">NETWORK: 0.00 KB/s</span>
+    <div class="monitor-box">
+        <div id="espStatus" class="pill-status" style="color:#f85149">STATE: OFFLINE</div>
+        <span id="speedVal" class="net-speed">TX RATE: 0.00 KB/s</span>
     </div>
 </header>
 
 <div class="grid" id="uiGrid"></div>
 
-<div class="master-controls">
-    <button class="btn-master" style="background: var(--green)" onclick="mCmd('allon')">TEMPLE ACTIVE</button>
-    <button class="btn-master" style="background: var(--red)" onclick="mCmd('alloff')">TEMPLE INACTIVE</button>
+<div class="master-panel">
+    <button class="btn-master" style="background: var(--green)" onclick="mCmd('allon')">MASTER START</button>
+    <button class="btn-master" style="background: var(--red)" onclick="mCmd('alloff')">MASTER STOP</button>
 </div>
 
 <div id="modal">
-    <div class="login-card">
-        <h3 style="color:white; margin-top:0;">Weekly Scheduler</h3>
-        <p id="targetName" style="font-size:16px; color:var(--gold); margin-bottom:25px; font-weight:bold;"></p>
-        <select id="dayInput">
-            <option value="1">MONDAY</option>
-            <option value="2">TUESDAY</option>
-            <option value="3">WEDNESDAY</option>
-            <option value="4">THURSDAY</option>
-            <option value="5">FRIDAY</option>
-            <option value="6">SATURDAY</option>
-            <option value="0">SUNDAY</option>
-        </select>
+    <div class="login-card" style="width: 480px;">
+        <h3 style="color:white; margin-top:0; letter-spacing: 2px;">MULTI-DAY AUTOMATION</h3>
+        <p id="targetName" style="font-size:18px; color:var(--gold); margin-bottom:20px; font-weight:900; text-transform:uppercase;"></p>
+        
+        <p style="color:#8b949e; font-size:13px; text-align:left; margin-bottom:5px; font-weight:bold;">SELECT ACTIVE DAYS:</p>
+        <div class="day-grid">
+            <label class="day-label"><input type="checkbox" value="1" class="day-chk"> Mon</label>
+            <label class="day-label"><input type="checkbox" value="2" class="day-chk"> Tue</label>
+            <label class="day-label"><input type="checkbox" value="3" class="day-chk"> Wed</label>
+            <label class="day-label"><input type="checkbox" value="4" class="day-chk"> Thu</label>
+            <label class="day-label"><input type="checkbox" value="5" class="day-chk"> Fri</label>
+            <label class="day-label"><input type="checkbox" value="6" class="day-chk"> Sat</label>
+            <label class="day-label"><input type="checkbox" value="0" class="day-chk"> Sun</label>
+        </div>
+
         <input type="time" id="timeInput">
         <select id="stInput">
-            <option value="1">ACTION: TURN ON</option>
-            <option value="0">ACTION: TURN OFF</option>
+            <option value="1">ACTION: POWER ON</option>
+            <option value="0">ACTION: POWER OFF</option>
         </select>
-        <button class="btn-action" onclick="saveTimer()">DEPLOY TO ESP32</button>
-        <button class="btn-action" style="background:#30363d; margin-top:10px;" onclick="closeM()">CANCEL</button>
+        
+        <button class="btn-action" onclick="saveTimer()">DEPLOY BATCH TASK</button>
+        <button class="btn-action" style="background:#30363d; margin-top:15px;" onclick="closeM()">CANCEL</button>
     </div>
 </div>
 
 <script>
-    const rNames = ["Om", "Melam-1", "Melam-2", "Agathiyar", "Vinayakar", "Navakiragam", "Source-1", "Source-2"];
+    // NAMES UPDATED WITH "LIGHT" SUFFIX
+    const rNames = ["OM LIGHT", "Melam-1", "Melam-2", "AGATHIYAR LIGHT", "VINAYAKAR LIGHT", "NAVAKIRAGAM LIGHT", "Source-1", "Source-2"];
     let selCh = 0;
     let lastHeartbeat = 0;
     
     function login() {
         if(document.getElementById('pBox').value === "Agathiyar") {
             document.getElementById('loginGate').style.display = "none";
-        } else { alert("Access Denied"); }
+        } else { alert("ACCESS DENIED"); }
     }
 
-    let mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "kovil_v8_" + Math.random());
+    let mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "kovil_v10_" + Math.random());
 
     function build() {
         const grid = document.getElementById('uiGrid');
@@ -109,32 +119,39 @@
                 <div class="card">
                     <div class="app-name">${rNames[ch-1]}</div>
                     <div id="st-${ch}" class="relay-val" onclick="tgl(${ch})" style="color:#f85149">OFF</div>
-                    <div class="timer-footer">
-                        <div class="timer-info" id="inf-${ch}">NO TASK</div>
-                        <button class="btn-set-timer" onclick="showM(${ch})">SET DAY</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:20px;">
+                        <div class="timer-info" id="inf-${ch}">NO TASK QUEUED</div>
+                        <button class="btn-set-timer" onclick="showM(${ch})">SCHED</button>
                     </div>
                 </div>
             `;
         });
     }
 
-    // NETWORK SPEED SIMULATOR (MB/s / KB/s)
+    // CHECK FOR DROPPED CONNECTION
     setInterval(() => {
-        const statusEl = document.getElementById('espStatus');
-        const speedEl = document.getElementById('speedVal');
         if (Date.now() - lastHeartbeat > 10000) {
-            statusEl.innerText = "OFFLINE"; statusEl.style.color = "#f85149";
-            speedEl.innerText = "NETWORK: 0.00 KB/s";
-        } else {
-            statusEl.innerText = "ONLINE"; statusEl.style.color = "#3fb950";
-            let val = (Math.random() * 1.5).toFixed(2);
-            speedEl.innerText = `NETWORK: ${val} MB/s`;
+            const statusEl = document.getElementById('espStatus');
+            statusEl.innerText = "STATE: OFFLINE"; 
+            statusEl.style.color = "#f85149";
+            document.getElementById('speedVal').innerText = "TX RATE: 0.00 KB/s";
         }
     }, 2000);
 
     mqtt.onMessageArrived = (msg) => {
         const d = JSON.parse(msg.payloadString);
-        if (msg.destinationName.includes("heartbeat")) { lastHeartbeat = Date.now(); }
+        
+        if (msg.destinationName.includes("heartbeat")) { 
+            lastHeartbeat = Date.now(); 
+            const statusEl = document.getElementById('espStatus');
+            statusEl.innerText = "STATE: OPERATIONAL"; 
+            statusEl.style.color = "#3fb950";
+            
+            // PARSE REAL TELEMETRY SPEED FROM ESP32
+            if(d.net_speed_kbps !== undefined) {
+                document.getElementById('speedVal').innerText = `TX RATE: ${parseFloat(d.net_speed_kbps).toFixed(3)} KB/s`;
+            }
+        }
         else if (msg.destinationName.includes("status")) {
             d.states.forEach((s, i) => {
                 const el = document.getElementById(`st-${i+1}`);
@@ -142,7 +159,7 @@
             });
         }
         else if (msg.destinationName.includes("sched_info")) {
-            for(let i=1; i<=8; i++) document.getElementById(`inf-${i}`).innerHTML = "NO TASK";
+            for(let i=1; i<=8; i++) document.getElementById(`inf-${i}`).innerHTML = "READY";
             d.forEach(item => {
                 const l = document.getElementById(`inf-${item.ch}`);
                 if(l) l.innerHTML = item.time + "<br>(" + (item.state?'ON':'OFF') + ")";
@@ -157,19 +174,45 @@
 
     function tgl(ch) { mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:"toggle", ch:ch})); }
     function mCmd(c) { mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:c})); }
-    function showM(ch) { selCh = ch; document.getElementById('targetName').innerText = rNames[ch-1]; document.getElementById('modal').style.display = 'flex'; }
+    
+    function showM(ch) { 
+        selCh = ch; 
+        document.getElementById('targetName').innerText = rNames[ch-1]; 
+        
+        // Reset checkboxes when opening
+        document.querySelectorAll('.day-chk').forEach(cb => cb.checked = false);
+        document.getElementById('timeInput').value = "";
+        
+        document.getElementById('modal').style.display = 'flex'; 
+    }
+    
     function closeM() { document.getElementById('modal').style.display = 'none'; }
     
     function saveTimer() {
         const timeVal = document.getElementById('timeInput').value;
-        if(!timeVal) return alert("Select Time");
+        if(!timeVal) return alert("SELECT TIME");
+        
+        // Gather all checked days into an array
+        let selectedDays = [];
+        const checkboxes = document.querySelectorAll('.day-chk:checked');
+        checkboxes.forEach((cb) => {
+            selectedDays.push(parseInt(cb.value));
+        });
+        
+        if(selectedDays.length === 0) return alert("SELECT AT LEAST ONE DAY");
+
         const parts = timeVal.split(':');
+        
+        // Send payload with array of days
         mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({
-            cmd: "schedule", ch: selCh, 
-            day: parseInt(document.getElementById('dayInput').value),
-            hour: parseInt(parts[0]), minute: parseInt(parts[1]),
+            cmd: "schedule", 
+            ch: selCh, 
+            days: selectedDays, // Sending array instead of single int
+            hour: parseInt(parts[0]), 
+            minute: parseInt(parts[1]),
             state: parseInt(document.getElementById('stInput').value)
         }));
+        
         closeM();
     }
     build();
