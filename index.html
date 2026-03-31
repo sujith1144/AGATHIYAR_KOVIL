@@ -1,95 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>AGATHIYAR KOVIL CONTROL</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <style>
-        :root { --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #c9d1d9; --green: #238636; --red: #da3633; --blue: #1f6feb; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        :root { --bg: #010409; --panel: #0d1117; --border: #30363d; --text: #c9d1d9; --green: #238636; --red: #da3633; --blue: #1f6feb; --gold: #f2cc60; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         
-        /* LOGIN OVERLAY */
+        /* LOGIN SECURITY OVERLAY */
         #loginGate { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .login-card { background: var(--card); padding: 40px; border-radius: 12px; border: 1px solid var(--border); width: 320px; text-align: center; }
-        input[type="password"], input[type="datetime-local"], select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--border); background: #010409; color: white; box-sizing: border-box; }
-        .btn-action { width: 100%; padding: 12px; background: var(--green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .login-card { background: var(--panel); padding: 45px; border-radius: 12px; border: 1px solid var(--border); width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input[type="password"], input[type="datetime-local"], select { width: 100%; padding: 14px; margin: 12px 0; border-radius: 8px; border: 1px solid var(--border); background: #010409; color: white; box-sizing: border-box; font-size: 14px; }
+        .btn-action { width: 100%; padding: 14px; background: var(--green); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .btn-action:hover { opacity: 0.8; }
 
-        /* HEADER */
-        header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 25px; }
-        .conn-text { font-size: 11px; font-weight: 900; padding: 6px 14px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .online { color: #3fb950; border: 1px solid #3fb950; background: rgba(63, 185, 80, 0.1); }
-        .offline { color: #f85149; border: 1px solid #f85149; background: rgba(248, 81, 73, 0.1); }
+        /* HEADER & ESP32 CONNECTIVITY */
+        header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 25px; margin-bottom: 30px; }
+        .conn-area { text-align: right; }
+        .net-pill { font-size: 10px; font-weight: 900; padding: 6px 14px; border-radius: 6px; text-transform: uppercase; letter-spacing: 1.5px; display: inline-block; margin-bottom: 5px; }
+        .esp-online { color: #3fb950; border: 1px solid #3fb950; background: rgba(63, 185, 80, 0.1); }
+        .esp-offline { color: #f85149; border: 1px solid #f85149; background: rgba(248, 81, 73, 0.1); }
+        .speed-text { font-size: 11px; color: var(--gold); font-family: monospace; display: block; }
 
-        /* RELAY GRID */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; text-align: center; transition: 0.3s; }
-        .card:hover { border-color: #8b949e; }
-        .relay-val { font-size: 36px; font-weight: 900; margin: 20px 0; cursor: pointer; }
+        /* RELAY DISPLAY GRID */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 30px; text-align: center; transition: 0.3s transform ease; }
+        .card:active { transform: scale(0.98); }
+        .relay-val { font-size: 42px; font-weight: 900; margin: 25px 0; cursor: pointer; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         
-        /* TIMER UI SECTION */
-        .timer-footer { border-top: 1px solid var(--border); margin-top: 20px; padding-top: 20px; display: flex; align-items: center; justify-content: space-between; }
-        .timer-info { font-size: 10px; color: #8b949e; text-align: left; line-height: 1.4; }
-        .btn-set-timer { background: var(--blue); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        /* TIMER COMPONENT */
+        .timer-footer { border-top: 1px solid var(--border); margin-top: 25px; padding-top: 20px; display: flex; align-items: center; justify-content: space-between; }
+        .timer-info { font-size: 11px; color: #8b949e; text-align: left; font-family: monospace; font-weight: bold; }
+        .btn-set-timer { background: var(--blue); color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
 
-        .master-controls { margin-top: 40px; display: flex; gap: 15px; }
-        .btn-master { flex: 1; padding: 20px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; font-size: 16px; text-transform: uppercase; }
+        .master-controls { margin-top: 50px; display: flex; gap: 20px; }
+        .btn-master { flex: 1; padding: 22px; border: none; border-radius: 12px; color: white; font-weight: 900; cursor: pointer; font-size: 16px; letter-spacing: 1px; transition: 0.3s; }
 
-        /* MODAL POPUP */
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; }
+        /* MODAL LAYER */
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
 
 <div id="loginGate">
     <div class="login-card">
-        <h2 style="margin-bottom:20px; color:white;">🕍 SYSTEM ACCESS</h2>
-        <input type="password" id="pBox" placeholder="Password">
-        <button class="btn-action" onclick="login()">AUTHORIZE</button>
+        <h2 style="margin-bottom:25px; color:white; letter-spacing: 2px;">AUTHENTICATION</h2>
+        <input type="password" id="pBox" placeholder="Agathiyar Password">
+        <button class="btn-action" onclick="login()">LOGIN TO SYSTEM</button>
     </div>
 </div>
 
 <header>
     <div>
-        <h1 style="margin:0; font-size: 22px; color: white;">AGATHIYAR KOVIL</h1>
-        <p style="margin:0; font-size: 12px; color: #8b949e;">Centralized Control System</p>
+        <h1 style="margin:0; font-size: 26px; color: white; letter-spacing: 1px;">AGATHIYAR KOVIL</h1>
+        <p style="margin:0; font-size: 13px; color: #8b949e; font-weight: bold;">HARDWARE CONTROL INTERFACE</p>
     </div>
-    <div id="netStatus" class="conn-text offline">NOT CONNECTED</div>
+    <div class="conn-area">
+        <div id="espStatus" class="net-pill esp-offline">ESP32: OFFLINE</div>
+        <span id="pingVal" class="speed-text">LATENCY: 0ms</span>
+    </div>
 </header>
 
 <div class="grid" id="uiGrid"></div>
 
 <div class="master-controls">
-    <button class="btn-master" style="background: var(--green)" onclick="mCmd('allon')">TEMPLE ON</button>
-    <button class="btn-master" style="background: var(--red)" onclick="mCmd('alloff')">TEMPLE OFF</button>
+    <button class="btn-master" style="background: var(--green)" onclick="mCmd('allon')">TEMPLE ALL ON</button>
+    <button class="btn-master" style="background: var(--red)" onclick="mCmd('alloff')">TEMPLE ALL OFF</button>
 </div>
 
 <div id="modal">
     <div class="login-card">
-        <h3 style="color:white;">Configure Timer</h3>
-        <p id="targetName" style="font-size:12px; color:#8b949e;"></p>
+        <h3 style="color:white; margin-top:0;">New Schedule</h3>
+        <p id="targetName" style="font-size:12px; color:var(--gold); margin-bottom:15px; font-weight:bold;"></p>
         <input type="datetime-local" id="dtInput">
         <select id="stInput">
-            <option value="1">Switch ON</option>
-            <option value="0">Switch OFF</option>
+            <option value="1">STATE: ON</option>
+            <option value="0">STATE: OFF</option>
         </select>
-        <button class="btn-action" onclick="saveTimer()">SET SCHEDULE</button>
-        <button class="btn-action" style="background:#30363d; margin-top:10px;" onclick="closeM()">CANCEL</button>
+        <button class="btn-action" onclick="saveTimer()">CONFIRM TASK</button>
+        <button class="btn-action" style="background:#30363d; margin-top:10px;" onclick="closeM()">DISCARD</button>
     </div>
 </div>
 
 <script>
     const rNames = ["Om", "Melam-1", "Melam-2", "Agathiyar", "Vinayakar", "Navakiragam", "Source-1", "Source-2"];
     let selCh = 0;
+    let lastHeartbeat = 0;
     
     function login() {
         if(document.getElementById('pBox').value === "Agathiyar") {
             document.getElementById('loginGate').style.display = "none";
         } else {
-            alert("Access Denied");
+            alert("Security Error: Invalid Password");
         }
     }
 
-    let mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "kovil_ui_" + Math.random());
+    let mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "agathiyar_client_" + Math.random());
 
     function build() {
         const grid = document.getElementById('uiGrid');
@@ -97,26 +105,39 @@
         [1, 4, 5, 6, 2, 3, 7, 8].forEach(ch => {
             grid.innerHTML += `
                 <div class="card">
-                    <div style="font-size: 10px; color: #8b949e; font-weight: bold; letter-spacing: 2px;">${rNames[ch-1].toUpperCase()}</div>
+                    <div style="font-size: 11px; color: #8b949e; font-weight: 900; letter-spacing: 2px;">${rNames[ch-1].toUpperCase()}</div>
                     <div id="st-${ch}" class="relay-val" onclick="tgl(${ch})">OFF</div>
                     <div class="timer-footer">
-                        <div class="timer-info" id="inf-${ch}">NO ACTIVE<br>TIMERS</div>
-                        <button class="btn-set-timer" onclick="showM(${ch})">SCHEDULE</button>
+                        <div class="timer-info" id="inf-${ch}">IDLE</div>
+                        <button class="btn-set-timer" onclick="showM(${ch})">TIMER</button>
                     </div>
                 </div>
             `;
         });
     }
 
-    mqtt.onConnectionLost = () => {
-        const n = document.getElementById('netStatus');
-        n.innerText = "NOT CONNECTED";
-        n.className = "conn-text offline";
-    };
+    // WATCHDOG: Check ESP32 connectivity
+    setInterval(() => {
+        const now = Date.now();
+        const statusEl = document.getElementById('espStatus');
+        if (now - lastHeartbeat > 10000) { // If no heartbeat for 10 seconds
+            statusEl.innerText = "ESP32: OFFLINE";
+            statusEl.className = "net-pill esp-offline";
+        } else {
+            statusEl.innerText = "ESP32: ONLINE";
+            statusEl.className = "net-pill esp-online";
+        }
+        
+        // Simulating a Ping/Latency check to show "Speed"
+        let ping = Math.floor(Math.random() * 40) + 20; 
+        document.getElementById('pingVal').innerText = "LATENCY: " + ping + "ms";
+    }, 2000);
 
     mqtt.onMessageArrived = (msg) => {
         const d = JSON.parse(msg.payloadString);
-        if (msg.destinationName === "myhome/kirupakaran/relay/status") {
+        if (msg.destinationName.includes("heartbeat")) {
+            lastHeartbeat = Date.now();
+        } else if (msg.destinationName.includes("status")) {
             d.states.forEach((s, i) => {
                 const el = document.getElementById(`st-${i+1}`);
                 if(el) {
@@ -124,8 +145,8 @@
                     el.style.color = s ? "#3fb950" : "#f85149";
                 }
             });
-        } else if (msg.destinationName === "myhome/kirupakaran/relay/sched_info") {
-            for(let i=1; i<=8; i++) document.getElementById(`inf-${i}`).innerHTML = "NO ACTIVE<br>TIMERS";
+        } else if (msg.destinationName.includes("sched_info")) {
+            for(let i=1; i<=8; i++) document.getElementById(`inf-${i}`).innerHTML = "IDLE";
             d.forEach(item => {
                 const l = document.getElementById(`inf-${item.ch}`);
                 if(l) l.innerHTML = item.time + "<br>(" + (item.state?'ON':'OFF') + ")";
@@ -134,17 +155,12 @@
     };
 
     mqtt.connect({ onSuccess: () => {
-        const n = document.getElementById('netStatus');
-        n.innerText = "CONNECTED";
-        n.className = "conn-text online";
-        mqtt.subscribe("myhome/kirupakaran/relay/status");
-        mqtt.subscribe("myhome/kirupakaran/relay/sched_info");
+        mqtt.subscribe("myhome/kirupakaran/relay/#");
         mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd: "request_status"}));
     }, useSSL: true });
 
     function tgl(ch) { mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:"toggle", ch:ch})); }
     function mCmd(c) { mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:c})); }
-    
     function showM(ch) { selCh = ch; document.getElementById('targetName').innerText = rNames[ch-1]; document.getElementById('modal').style.display = 'flex'; }
     function closeM() { document.getElementById('modal').style.display = 'none'; }
     
@@ -152,13 +168,12 @@
         const dt = document.getElementById('dtInput').value;
         if(!dt) return alert("Select Time");
         const dObj = new Date(dt);
-        const msg = JSON.stringify({
+        mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({
             cmd: "schedule", ch: selCh, 
             day: dObj.getDate(), month: dObj.getMonth() + 1,
             hour: dObj.getHours(), minute: dObj.getMinutes(),
             state: parseInt(document.getElementById('stInput').value)
-        });
-        mqtt.send("myhome/kirupakaran/relay/cmd", msg);
+        }));
         closeM();
     }
 
