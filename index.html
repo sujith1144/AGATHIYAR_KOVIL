@@ -1,222 +1,121 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <title>AGATHIYAR KOVIL V10 - MULTI-DAY DASHBOARD</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <style>
-        :root { --bg: #010409; --panel: #0d1117; --border: #30363d; --text: #c9d1d9; --green: #238636; --red: #da3633; --blue: #1f6feb; --gold: #f2cc60; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        
-        #loginGate { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: var(--panel); padding: 40px; border-radius: 20px; border: 1px solid var(--border); width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        
-        input[type="password"], input[type="time"], select { width: 100%; padding: 14px; margin: 15px 0; border-radius: 10px; border: 1px solid var(--border); background: #010409; color: white; font-size: 15px; box-sizing: border-box; font-weight: bold; }
-        .btn-action { width: 100%; padding: 16px; background: var(--green); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; letter-spacing: 2px; }
+  <title>Agathiyar Control</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
-        header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--border); padding-bottom: 30px; margin-bottom: 30px; }
-        .monitor-box { text-align: right; }
-        .pill-status { font-size: 13px; font-weight: 900; padding: 10px 20px; border-radius: 10px; text-transform: uppercase; letter-spacing: 2px; border: 1px solid var(--border); transition: 0.5s; }
-        .net-speed { color: var(--gold); font-family: 'Courier New', monospace; font-size: 14px; margin-top: 12px; display: block; font-weight: 900; }
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      text-align: center;
+    }
 
-        /* SHRUNK THE CARD GRID SIZE AND SPACING */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-        
-        /* SHRUNK THE CARD PADDING */
-        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 25px; text-align: center; transition: 0.3s; position: relative; }
-        .card:hover { border-color: var(--blue); transform: scale(1.02); }
-        
-        /* SHRUNK FONTS FOR SLEEKER LOOK */
-        .app-name { font-size: 15px; color: #ffffff; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
-        .relay-val { font-size: 42px; font-weight: 900; margin: 20px 0; cursor: pointer; transition: 0.3s; }
-        
-        .timer-info { font-size: 11px; color: #8b949e; text-align: left; font-family: 'Courier New', monospace; font-weight: 900; line-height: 1.4; }
-        .btn-set-timer { background: var(--blue); color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 900; letter-spacing: 1px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      padding: 20px;
+    }
 
-        .master-panel { margin-top: 40px; display: flex; gap: 20px; border-top: 1px solid var(--border); padding-top: 30px; }
-        .btn-master { flex: 1; padding: 20px; border: none; border-radius: 14px; color: white; font-weight: 900; cursor: pointer; font-size: 18px; text-transform: uppercase; letter-spacing: 2px; }
+    .card {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+    }
 
-        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9000; align-items:center; justify-content:center; }
-        
-        /* MULTI-DAY CHECKBOX GRID CSS */
-        .day-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; text-align: left; }
-        .day-label { color: #c9d1d9; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; background: #010409; padding: 8px; border-radius: 8px; border: 1px solid var(--border); }
-        .day-label input[type="checkbox"] { width: 16px; height: 16px; margin: 0; cursor: pointer; }
-    </style>
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+    }
+
+    .on { background: green; }
+    .off { background: red; }
+  </style>
 </head>
+
 <body>
 
-<div id="loginGate">
-    <div class="login-card">
-        <h2 style="color:white; letter-spacing: 4px; margin-bottom: 30px;">AGATHIYAR SECURE</h2>
-        <input type="password" id="pBox" placeholder="Enter System Key">
-        <button class="btn-action" onclick="login()">AUTHORIZE NODE</button>
-    </div>
-</div>
+<h2>Agathiyar Kovil Dashboard</h2>
 
-<header>
-    <div>
-        <h1 style="margin:0; font-size: 34px; color: white; letter-spacing: 4px; font-weight: 900;">AGATHIYAR KOVIL</h1>
-        <p style="margin:8px 0 0 0; font-size: 14px; color: #8b949e; font-weight: 900; text-transform: uppercase; letter-spacing: 3px;">OM AGATHEESWARAYA NAMAHA ✨</p>
-    </div>
-    <div class="monitor-box">
-        <div id="espStatus" class="pill-status" style="color:#f85149">OFFLINE</div>
-        <span id="speedVal" class="net-speed">TX RATE: 0.00 KB/s</span>
-    </div>
-</header>
+<div class="grid" id="grid"></div>
 
-<div class="grid" id="uiGrid"></div>
-
-<div class="master-panel">
-    <button class="btn-master" style="background: var(--green)" onclick="mCmd('allon')">MASTER START</button>
-    <button class="btn-master" style="background: var(--red)" onclick="mCmd('alloff')">MASTER STOP</button>
-</div>
-
-<div id="modal">
-    <div class="login-card" style="width: 440px;">
-        <h3 style="color:white; margin-top:0; letter-spacing: 2px;">MULTI-DAY AUTOMATION</h3>
-        <p id="targetName" style="font-size:16px; color:var(--gold); margin-bottom:20px; font-weight:900; text-transform:uppercase;"></p>
-        
-        <p style="color:#8b949e; font-size:12px; text-align:left; margin-bottom:5px; font-weight:bold;">SELECT ACTIVE DAYS:</p>
-        <div class="day-grid">
-            <label class="day-label"><input type="checkbox" value="1" class="day-chk"> Mon</label>
-            <label class="day-label"><input type="checkbox" value="2" class="day-chk"> Tue</label>
-            <label class="day-label"><input type="checkbox" value="3" class="day-chk"> Wed</label>
-            <label class="day-label"><input type="checkbox" value="4" class="day-chk"> Thu</label>
-            <label class="day-label"><input type="checkbox" value="5" class="day-chk"> Fri</label>
-            <label class="day-label"><input type="checkbox" value="6" class="day-chk"> Sat</label>
-            <label class="day-label"><input type="checkbox" value="0" class="day-chk"> Sun</label>
-        </div>
-
-        <input type="time" id="timeInput">
-        <select id="stInput">
-            <option value="1">ACTION: POWER ON</option>
-            <option value="0">ACTION: POWER OFF</option>
-        </select>
-        
-        <button class="btn-action" onclick="saveTimer()">DEPLOY BATCH TASK</button>
-        <button class="btn-action" style="background:#30363d; margin-top:10px;" onclick="closeM()">CANCEL</button>
-    </div>
-</div>
+<button onclick="allOn()">ALL ON</button>
+<button onclick="allOff()">ALL OFF</button>
 
 <script>
-    const rNames = ["OM", "MELAM-1", "MELAM-2", "AGATHIYAR", "VINAYAKAR", "NAVAKIRAGAM", "SOURCE-1", "SOURCE-2"];
-    let selCh = 0;
-    let lastHeartbeat = 0;
-    
-    function login() {
-        if(document.getElementById('pBox').value === "OM") {
-            document.getElementById('loginGate').style.display = "none";
-        } else { alert("ACCESS DENIED"); }
+const client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
+
+const relays = [
+  "Main Light","Fan","Outer Light","Temple Inside",
+  "Audio System","Motor","Spare 1","Spare 2"
+];
+
+const state = {};
+const timers = {};
+
+function createUI() {
+  const grid = document.getElementById("grid");
+
+  relays.forEach((name, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <h3>${name}</h3>
+      <button id="btn${i}" onclick="toggle(${i})">OFF</button>
+      <p id="timer${i}">Manual Mode</p>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
+function toggle(i) {
+  const newState = state[i] === "ON" ? "OFF" : "ON";
+
+  client.publish(`cmnd/agathiyar/relay/${i+1}`, newState);
+}
+
+function allOn() {
+  client.publish("cmnd/agathiyar/all", "ON");
+}
+
+function allOff() {
+  client.publish("cmnd/agathiyar/all", "OFF");
+}
+
+client.on('connect', () => {
+  console.log("Connected");
+
+  for (let i = 1; i <= 8; i++) {
+    client.subscribe(`stat/agathiyar/relay/${i}`);
+    client.subscribe(`stat/agathiyar/relay/${i}/timer`);
+  }
+});
+
+client.on('message', (topic, message) => {
+  const msg = message.toString();
+
+  for (let i = 0; i < 8; i++) {
+    if (topic === `stat/agathiyar/relay/${i+1}`) {
+      state[i] = msg;
+
+      const btn = document.getElementById(`btn${i}`);
+      btn.innerText = msg;
+      btn.className = msg === "ON" ? "on" : "off";
     }
 
-    let mqtt = new Paho.MQTT.Client("broker.emqx.io", 8084, "kovil_v10_" + Math.random());
-
-    function build() {
-        const grid = document.getElementById('uiGrid');
-        grid.innerHTML = "";
-        [1, 4, 5, 6, 2, 3, 7, 8].forEach(ch => {
-            grid.innerHTML += `
-                <div class="card">
-                    <div class="app-name">${rNames[ch-1]}</div>
-                    <div id="st-${ch}" class="relay-val" onclick="tgl(${ch})" style="color:#f85149">OFF</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:15px;">
-                        <div class="timer-info" id="inf-${ch}">NO TASK QUEUED</div>
-                        <button class="btn-set-timer" onclick="showM(${ch})">ADD TIMER</button>
-                    </div>
-                </div>
-            `;
-        });
+    if (topic === `stat/agathiyar/relay/${i+1}/timer`) {
+      document.getElementById(`timer${i}`).innerText = msg;
     }
+  }
+});
 
-    // CHECK FOR DROPPED CONNECTION
-    setInterval(() => {
-        if (Date.now() - lastHeartbeat > 10000) {
-            const statusEl = document.getElementById('espStatus');
-            statusEl.innerText = "OFFLINE"; 
-            statusEl.style.color = "#f85149";
-            document.getElementById('speedVal').innerText = "TX RATE: 0.00 KB/s";
-        }
-    }, 2000);
-
-    mqtt.onMessageArrived = (msg) => {
-        const d = JSON.parse(msg.payloadString);
-        
-        if (msg.destinationName.includes("heartbeat")) { 
-            lastHeartbeat = Date.now(); 
-            const statusEl = document.getElementById('espStatus');
-            statusEl.innerText = "ONLINE"; 
-            statusEl.style.color = "#3fb950";
-            
-            if(d.net_speed_kbps !== undefined) {
-                document.getElementById('speedVal').innerText = `TX RATE: ${parseFloat(d.net_speed_kbps).toFixed(3)} KB/s`;
-            }
-        }
-        else if (msg.destinationName.includes("status")) {
-            d.states.forEach((s, i) => {
-                const el = document.getElementById(`st-${i+1}`);
-                if(el) { el.innerText = s ? "ON" : "OFF"; el.style.color = s ? "#3fb950" : "#f85149"; }
-            });
-        }
-        else if (msg.destinationName.includes("sched_info")) {
-            for(let i=1; i<=8; i++) {
-                let inf = document.getElementById(`inf-${i}`);
-                if(inf) inf.innerHTML = "READY";
-            }
-            d.forEach(item => {
-                const l = document.getElementById(`inf-${item.ch}`);
-                if(l) l.innerHTML = item.time + "<br>(" + (item.state?'ON':'OFF') + ")";
-            });
-        }
-    };
-
-    mqtt.connect({ onSuccess: () => {
-        mqtt.subscribe("myhome/kirupakaran/relay/#");
-        mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd: "request_status"}));
-    }, useSSL: true });
-
-    function tgl(ch) { mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:"toggle", ch:ch})); }
-    function mCmd(c) { mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({cmd:c})); }
-    
-    function showM(ch) { 
-        selCh = ch; 
-        document.getElementById('targetName').innerText = rNames[ch-1]; 
-        
-        document.querySelectorAll('.day-chk').forEach(cb => cb.checked = false);
-        document.getElementById('timeInput').value = "";
-        
-        document.getElementById('modal').style.display = 'flex'; 
-    }
-    
-    function closeM() { document.getElementById('modal').style.display = 'none'; }
-    
-    function saveTimer() {
-        const timeVal = document.getElementById('timeInput').value;
-        if(!timeVal) return alert("SELECT TIME");
-        
-        let selectedDays = [];
-        const checkboxes = document.querySelectorAll('.day-chk:checked');
-        checkboxes.forEach((cb) => {
-            selectedDays.push(parseInt(cb.value));
-        });
-        
-        if(selectedDays.length === 0) return alert("SELECT AT LEAST ONE DAY");
-
-        const parts = timeVal.split(':');
-        
-        mqtt.send("myhome/kirupakaran/relay/cmd", JSON.stringify({
-            cmd: "schedule", 
-            ch: selCh, 
-            days: selectedDays, 
-            hour: parseInt(parts[0]), 
-            minute: parseInt(parts[1]),
-            state: parseInt(document.getElementById('stInput').value)
-        }));
-        
-        closeM();
-    }
-    build();
+createUI();
 </script>
+
 </body>
 </html>
