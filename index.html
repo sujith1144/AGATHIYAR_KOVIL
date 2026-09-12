@@ -407,8 +407,8 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
       ⚙ MQTT Settings
       <button class="modal-close" id="mClose">✕</button>
     </div>
-    <div class="mf"><label>Broker Host</label><input id="cfgHost" placeholder="broker.emqx.io"></div>
-    <div class="mf"><label>WebSocket Port</label><input id="cfgPort" type="number" placeholder="8084"><div class="hint">Web uses WSS (8084). ESP32 uses plain MQTT (1883).</div></div>
+    <div class="mf"><label>Broker Host</label><input id="cfgHost" placeholder="broker.hivemq.com"></div>
+    <div class="mf"><label>WebSocket Port</label><input id="cfgPort" type="number" placeholder="8000"><div class="hint">Web uses WebSockets (8000/8884/8084). ESP32 uses TCP (1883). Auto-bridged!</div></div>
     <div class="mf"><label>Topic Prefix</label><input id="cfgPrefix" placeholder="KOVIL_AGATH"><div class="hint">Must match MQTT_PREFIX in sketch.</div></div>
     <div class="mf"><label>Username (optional)</label><input id="cfgUser" placeholder="leave blank"></div>
     <div class="mf"><label>Password (optional)</label><input id="cfgPass" type="password" placeholder="leave blank"></div>
@@ -435,7 +435,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
 
 <script>
 /* ── LOGO ── */
-const LOGO_B64='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';
+const LOGO_B64='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';
 const LOGO_SRC='data:image/jpeg;base64,'+LOGO_B64;
 document.getElementById('loginLogo').src=LOGO_SRC;
 document.getElementById('hdrLogo').src=LOGO_SRC;
@@ -448,7 +448,7 @@ const APPS=[
   {id:4,name:'AGATHIYAR-LT',     icon:'🔆'},
   {id:5,name:'MELAM-1',          icon:'🥁'},
   {id:6,name:'MELAM-2',          icon:'🥁'},
-  {id:7,name:'GOPURA DHIPAM-LIGHT',         icon:'🔌'},
+  {id:7,name:'GOPURA DHIPAM-LIGHT',icon:'🔌'},
   {id:8,name:'SOURCE-2',         icon:'🔌'},
 ];
 const DAY_OPTS=[
@@ -466,9 +466,22 @@ let lastHbTime=0;
 let hbTimer=null;
 
 function loadCfg(){
-  return{host:localStorage.getItem('mq_host')||'broker.emqx.io',port:localStorage.getItem('mq_port')||'8084',prefix:localStorage.getItem('mq_pfx')||'KOVIL_AGATH',user:localStorage.getItem('mq_user')||'',pass:localStorage.getItem('mq_pass')||''};
+  return{
+    host:localStorage.getItem('mq_host')||'broker.hivemq.com',
+    port:localStorage.getItem('mq_port')||'8000',
+    prefix:localStorage.getItem('mq_pfx')||'KOVIL_AGATH',
+    user:localStorage.getItem('mq_user')||'',
+    pass:localStorage.getItem('mq_pass')||''
+  };
 }
-function saveCfg(c){localStorage.setItem('mq_host',c.host);localStorage.setItem('mq_port',c.port);localStorage.setItem('mq_pfx',c.prefix);localStorage.setItem('mq_user',c.user);localStorage.setItem('mq_pass',c.pass);cfg=c;}
+function saveCfg(c){
+  localStorage.setItem('mq_host',c.host);
+  localStorage.setItem('mq_port',c.port);
+  localStorage.setItem('mq_pfx',c.prefix);
+  localStorage.setItem('mq_user',c.user);
+  localStorage.setItem('mq_pass',c.pass);
+  cfg=c;
+}
 function saveSch(){localStorage.setItem('kovil_sch_v2',JSON.stringify(schedules));}
 
 /* ── LOGIN ── */
@@ -582,11 +595,20 @@ function addSch(appId){
 }
 function delSch(appId,idx){schedules[appId].splice(idx,1);saveSch();buildPanel();toast('Schedule removed','🗑');}
 
-/* ── MQTT ── */
+/* ── MQTT (SMART WEBSOCKET DETECTION) ── */
 function connectMQTT(){
   if(mqttClient&&mqttClient.connected)mqttClient.end(true);
   lastHbTime=0;updateESPDot();setMQTT('connecting');
-  const url=`wss://${cfg.host}:${cfg.port}/mqtt`;
+
+  // Smart Port Mapping for WebSockets
+  let p = parseInt(cfg.port) || 8000;
+  if (p === 1883) {
+    p = cfg.host.includes('emqx') ? 8084 : 8000; // Auto-bridge 1883 -> WebSocket port
+  }
+  let proto = (p === 8884 || p === 8084) ? 'wss' : 'ws';
+  if (location.protocol === 'https:' && proto === 'ws') proto = 'wss';
+
+  const url=`${proto}://${cfg.host}:${p}/mqtt`;
   const cid='kovil_web_'+Math.random().toString(36).substring(2,9);
   const opts={clientId:cid,clean:true,reconnectPeriod:5000,connectTimeout:15000};
   if(cfg.user){opts.username=cfg.user;opts.password=cfg.pass;}
@@ -599,6 +621,7 @@ function connectMQTT(){
     mqttClient.subscribe(`${px}/device/heartbeat`);
     mqttClient.subscribe(`${px}/device/status`);
     mqttClient.publish(`${px}/web/status`,'online',{retain:false});
+    mqttClient.publish(`${px}/get`,'status',{retain:false}); // Request instant sync from ESP32
   });
   mqttClient.on('message',(topic,msg)=>{
     const val=msg.toString().trim().toUpperCase(),px=cfg.prefix;
@@ -634,12 +657,30 @@ async function measureSpeed(){try{if(navigator.connection&&navigator.connection.
 function startSpeed(){measureSpeed();setInterval(measureSpeed,30000);if(navigator.connection)navigator.connection.addEventListener('change',measureSpeed);}
 
 /* ── SETTINGS MODAL JS ── */
-document.getElementById('settingsBtn').addEventListener('click',()=>{document.getElementById('cfgHost').value=cfg.host;document.getElementById('cfgPort').value=cfg.port;document.getElementById('cfgPrefix').value=cfg.prefix;document.getElementById('cfgUser').value=cfg.user;document.getElementById('cfgPass').value=cfg.pass;document.getElementById('settingsModal').classList.add('open');});
+document.getElementById('settingsBtn').addEventListener('click',()=>{
+  document.getElementById('cfgHost').value=cfg.host;
+  document.getElementById('cfgPort').value=cfg.port;
+  document.getElementById('cfgPrefix').value=cfg.prefix;
+  document.getElementById('cfgUser').value=cfg.user;
+  document.getElementById('cfgPass').value=cfg.pass;
+  document.getElementById('settingsModal').classList.add('open');
+});
 document.getElementById('mClose').addEventListener('click',()=>document.getElementById('settingsModal').classList.remove('open'));
-document.getElementById('cfgSave').addEventListener('click',()=>{saveCfg({host:document.getElementById('cfgHost').value.trim()||'broker.emqx.io',port:document.getElementById('cfgPort').value.trim()||'8084',prefix:document.getElementById('cfgPrefix').value.trim()||'KOVIL_AGATH',user:document.getElementById('cfgUser').value.trim(),pass:document.getElementById('cfgPass').value.trim()});document.getElementById('settingsModal').classList.remove('open');connectMQTT();toast('Settings saved. Reconnecting…','⚙');});
+document.getElementById('cfgSave').addEventListener('click',()=>{
+  saveCfg({
+    host:document.getElementById('cfgHost').value.trim()||'broker.hivemq.com',
+    port:document.getElementById('cfgPort').value.trim()||'8000',
+    prefix:document.getElementById('cfgPrefix').value.trim()||'KOVIL_AGATH',
+    user:document.getElementById('cfgUser').value.trim(),
+    pass:document.getElementById('cfgPass').value.trim()
+  });
+  document.getElementById('settingsModal').classList.remove('open');
+  connectMQTT();
+  toast('Settings saved. Reconnecting…','⚙');
+});
 document.getElementById('settingsModal').addEventListener('click',e=>{if(e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('open');});
 
-/* ── ADMIN MODAL JS (ADDED) ── */
+/* ── ADMIN MODAL JS ── */
 document.getElementById('adminBtn').addEventListener('click', () => { document.getElementById('adminModal').classList.add('open'); });
 document.getElementById('aClose').addEventListener('click', () => document.getElementById('adminModal').classList.remove('open'));
 document.getElementById('tgSave').addEventListener('click', () => {
@@ -653,7 +694,6 @@ document.getElementById('tgSave').addEventListener('click', () => {
   toast('Add command sent via MQTT', '✅');
 });
 document.getElementById('adminModal').addEventListener('click',e=>{if(e.target===document.getElementById('adminModal'))document.getElementById('adminModal').classList.remove('open');});
-
 
 /* ── LOGOUT ── */
 document.getElementById('logoutBtn').addEventListener('click',()=>{sessionStorage.removeItem('kauth');if(mqttClient)mqttClient.end(true);if(hbTimer)clearInterval(hbTimer);lastHbTime=0;document.getElementById('dashboard').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('pwInput').value='';});
