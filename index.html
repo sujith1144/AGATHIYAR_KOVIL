@@ -408,7 +408,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
       <button class="modal-close" id="mClose">✕</button>
     </div>
     <div class="mf"><label>Broker Host</label><input id="cfgHost" placeholder="broker.hivemq.com"></div>
-    <div class="mf"><label>WebSocket Port</label><input id="cfgPort" type="number" placeholder="8000"><div class="hint">Web uses WebSockets (8000/8884/8084). ESP32 uses TCP (1883). Auto-bridged!</div></div>
+    <div class="mf"><label>WebSocket Port</label><input id="cfgPort" type="number" placeholder="8884"><div class="hint">Web uses WebSockets (8884 for secure/HTTPS). ESP32 uses TCP (1883). Auto-bridged!</div></div>
     <div class="mf"><label>Topic Prefix</label><input id="cfgPrefix" placeholder="KOVIL_AGATH"><div class="hint">Must match MQTT_PREFIX in sketch.</div></div>
     <div class="mf"><label>Username (optional)</label><input id="cfgUser" placeholder="leave blank"></div>
     <div class="mf"><label>Password (optional)</label><input id="cfgPass" type="password" placeholder="leave blank"></div>
@@ -468,7 +468,7 @@ let hbTimer=null;
 function loadCfg(){
   return{
     host:localStorage.getItem('mq_host')||'broker.hivemq.com',
-    port:localStorage.getItem('mq_port')||'8000',
+    port:localStorage.getItem('mq_port')||'8884',
     prefix:localStorage.getItem('mq_pfx')||'KOVIL_AGATH',
     user:localStorage.getItem('mq_user')||'',
     pass:localStorage.getItem('mq_pass')||''
@@ -601,9 +601,9 @@ function connectMQTT(){
   lastHbTime=0;updateESPDot();setMQTT('connecting');
 
   // Smart Port Mapping for WebSockets
-  let p = parseInt(cfg.port) || 8000;
+  let p = parseInt(cfg.port) || 8884;
   if (p === 1883) {
-    p = cfg.host.includes('emqx') ? 8084 : 8000; // Auto-bridge 1883 -> WebSocket port
+    p = cfg.host.includes('emqx') ? 8084 : 8884; // Auto-bridge 1883 -> Secure WebSocket port
   }
   let proto = (p === 8884 || p === 8084) ? 'wss' : 'ws';
   if (location.protocol === 'https:' && proto === 'ws') proto = 'wss';
@@ -669,7 +669,7 @@ document.getElementById('mClose').addEventListener('click',()=>document.getEleme
 document.getElementById('cfgSave').addEventListener('click',()=>{
   saveCfg({
     host:document.getElementById('cfgHost').value.trim()||'broker.hivemq.com',
-    port:document.getElementById('cfgPort').value.trim()||'8000',
+    port:document.getElementById('cfgPort').value.trim()||'8884',
     prefix:document.getElementById('cfgPrefix').value.trim()||'KOVIL_AGATH',
     user:document.getElementById('cfgUser').value.trim(),
     pass:document.getElementById('cfgPass').value.trim()
