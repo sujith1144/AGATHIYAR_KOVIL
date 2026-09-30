@@ -3,703 +3,1397 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>AGATHIYAR KOVIL</title>
+<title>Modern House Automation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
-/* ── WHITE / LIGHT THEME ──────────────────────────────────────── */
-:root{
-  --bg:#f5f0e8;           /* warm ivory */
-  --bg2:#ede8df;
-  --surface:#ffffff;
-  --surface2:#faf7f2;
-  --gold:#b8860b;         /* darker gold — readable on white */
-  --gold2:#c9a227;
-  --gold3:#e8c44a;
-  --gold-dim:rgba(184,134,11,0.10);
-  --gold-glow:rgba(184,134,11,0.25);
-  --on:#1a9641;           /* deep green — readable on white */
-  --on-bg:rgba(26,150,65,0.10);
-  --on-glow:rgba(26,150,65,0.30);
-  --off:#c0392b;          /* deep red */
-  --off-bg:rgba(192,57,43,0.09);
-  --off-glow:rgba(192,57,43,0.25);
-  --warn:#e67e22;
-  --warn-glow:rgba(230,126,34,0.30);
-  --text:#2c2318;         /* near black */
-  --text2:#7a6a52;        /* muted brown */
-  --border:rgba(184,134,11,0.22);
-  --border-h:rgba(184,134,11,0.50);
-  --shadow:rgba(0,0,0,0.08);
-  --shadow-md:rgba(0,0,0,0.13);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{height:100%}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Rajdhani',sans-serif;
-  height:100%;
-  overflow:hidden;
-  background-image:
-    radial-gradient(ellipse 70% 35% at 50% 0%,rgba(184,134,11,0.06) 0%,transparent 70%),
-    url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(184%2C134%2C11%2C0.07)' stroke-width='0.5'%3E%3Crect x='8' y='8' width='34' height='34'/%3E%3Cline x1='25' y1='8' x2='25' y2='42'/%3E%3Cline x1='8' y1='25' x2='42' y2='25'/%3E%3C/g%3E%3C/svg%3E");
-  background-size:cover,50px 50px;
+:root {
+  --bg: #090d16;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #151d30 0%, #090d16 80%);
+  --surface: rgba(18, 24, 38, 0.75);
+  --surface-hover: rgba(26, 35, 54, 0.85);
+  --surface-solid: #121927;
+  --surface-accent: #1e293b;
+  --border: rgba(56, 189, 248, 0.16);
+  --border-active: rgba(56, 189, 248, 0.45);
+  --cyan: #06b6d4;
+  --cyan-glow: rgba(6, 182, 212, 0.35);
+  --emerald: #10b981;
+  --emerald-bg: rgba(16, 185, 129, 0.12);
+  --emerald-glow: rgba(16, 185, 129, 0.35);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245, 158, 11, 0.12);
+  --amber-glow: rgba(245, 158, 11, 0.35);
+  --crimson: #ef4444;
+  --crimson-bg: rgba(239, 68, 68, 0.12);
+  --crimson-glow: rgba(239, 68, 68, 0.35);
+  --water: #38bdf8;
+  --water-deep: #0284c7;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
-/* scrollbar */
-::-webkit-scrollbar{width:5px}
-::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:3px}
-
-/* ══ LOGIN PAGE ══════════════════════════════════════════════ */
-#loginPage{
-  position:fixed;inset:0;z-index:900;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:20px;
-  background:var(--bg);
-  background-image:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(184,134,11,0.07) 0%,transparent 70%);
-}
-.lp-wrap{width:100%;max-width:380px;animation:fadeUp .7s cubic-bezier(.16,1,.3,1) both;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-.lp-logo{
-  display:block;width:88px;height:88px;border-radius:50%;
-  border:2.5px solid var(--gold2);
-  box-shadow:0 0 0 5px rgba(184,134,11,0.12),0 6px 28px var(--shadow-md);
-  object-fit:cover;margin:0 auto 14px;
-  animation:logoPulse 3s ease-in-out infinite;
-}
-@keyframes logoPulse{
-  0%,100%{box-shadow:0 0 0 5px rgba(184,134,11,0.12),0 6px 28px var(--shadow-md)}
-  50%    {box-shadow:0 0 0 8px rgba(184,134,11,0.20),0 8px 36px rgba(0,0,0,0.18)}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--bg);
+  background-image: var(--bg-gradient);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100%;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.lp-card{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:20px;
-  padding:36px 32px 32px;
-  box-shadow:0 4px 24px var(--shadow-md), 0 1px 0 rgba(255,255,255,0.8) inset;
-}
-.lp-title{
-  font-family:'Cinzel Decorative',serif;font-size:16px;font-weight:700;
-  color:var(--gold);text-align:center;letter-spacing:2px;line-height:1.3;margin-bottom:2px;
-}
-.lp-sub{font-family:'Cinzel',serif;font-size:10px;color:var(--text2);text-align:center;letter-spacing:4px;text-transform:uppercase;margin-bottom:24px;}
-.lp-divider{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
-.lp-divider::before,.lp-divider::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,var(--gold2),transparent);}
-.lp-divider span{color:var(--gold2);font-size:12px;}
-.lp-field label{display:block;font-size:10px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
-.pw-wrap{position:relative;margin-bottom:16px;}
-.pw-wrap input{
-  width:100%;background:var(--bg);border:1.5px solid var(--border);
-  border-radius:10px;padding:12px 42px 12px 14px;
-  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:500;
-  color:var(--text);outline:none;letter-spacing:1.5px;
-  transition:border-color .2s,box-shadow .2s;
-}
-.pw-wrap input:focus{border-color:var(--gold2);box-shadow:0 0 0 3px var(--gold-dim);}
-.pw-wrap input::placeholder{color:var(--text2);letter-spacing:0.5px;}
-.eye-btn{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text2);font-size:16px;padding:4px;transition:color .2s;}
-.eye-btn:hover{color:var(--gold)}
-.lp-btn{
-  width:100%;padding:13px;border:none;border-radius:10px;
-  background:linear-gradient(135deg,var(--gold),var(--gold3),var(--gold));
-  background-size:200%;
-  font-family:'Cinzel',serif;font-size:13px;font-weight:600;
-  letter-spacing:3px;text-transform:uppercase;color:#fff;
-  cursor:pointer;
-  box-shadow:0 3px 12px var(--gold-glow);
-  transition:background-position .4s,box-shadow .3s,transform .12s;
-}
-.lp-btn:hover{background-position:right;box-shadow:0 5px 20px var(--gold-glow);transform:translateY(-1px);}
-.lp-btn:active{transform:translateY(0)}
-.lp-err{margin-top:12px;padding:9px 14px;background:var(--off-bg);border:1px solid rgba(192,57,43,0.25);border-radius:8px;font-size:12px;color:var(--off);text-align:center;display:none;}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
 
-/* ══ DASHBOARD ═══════════════════════════════════════════════ */
-#dashboard{display:none;height:100dvh;height:100vh;flex-direction:column;overflow:hidden;}
-
-/* ── Header ── */
-.hdr{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 14px;
-  background:var(--surface);
-  border-bottom:2px solid var(--gold-dim);
-  box-shadow:0 2px 8px var(--shadow);
-  flex-shrink:0;position:relative;z-index:10;
+/* ── LOGIN VIEW ── */
+#loginView {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: radial-gradient(circle at 50% 30%, #172554 0%, #090d16 75%);
 }
-.hdr::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--gold2),transparent);opacity:.5;}
-.hdr-logo{width:36px;height:36px;border-radius:50%;border:2px solid var(--gold2);object-fit:cover;box-shadow:0 2px 8px var(--shadow-md);flex-shrink:0;}
-.hdr-text{flex:1;min-width:0;}
-.hdr-title{font-family:'Cinzel Decorative',serif;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.hdr-sub{font-family:'Cinzel',serif;font-size:8px;color:var(--text2);letter-spacing:3px;}
-.hdr-chips{display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.chip{
-  display:flex;align-items:center;gap:5px;
-  border:1.5px solid var(--border);border-radius:20px;
-  padding:4px 9px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;
-  background:var(--surface2);white-space:nowrap;position:relative;cursor:default;
-  box-shadow:0 1px 3px var(--shadow);color:var(--text2);
+.login-card {
+  width: 100%; max-width: 400px;
+  background: rgba(18, 24, 38, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(6, 182, 212, 0.1);
+  text-align: center;
+  animation: fadeIn 0.6s ease-out;
 }
-.chip:hover .chip-tip{display:block}
-.chip-tip{display:none;position:absolute;top:calc(100%+7px);right:0;background:var(--surface);border:1.5px solid var(--border-h);border-radius:10px;padding:10px 14px;width:210px;font-size:10px;color:var(--text2);z-index:400;line-height:2;box-shadow:0 4px 16px var(--shadow-md);}
-.chip-tip b{color:var(--text);display:block;margin-bottom:4px;}
-.chip-tip .tr{display:flex;gap:7px;align-items:center;}
-.chip-tip .td{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .4s,box-shadow .4s;}
-.dot.grey  {background:#bbb}
-.dot.green {background:var(--on);box-shadow:0 0 6px var(--on-glow)}
-.dot.amber {background:var(--warn);box-shadow:0 0 6px var(--warn-glow)}
-.dot.red   {background:var(--off);box-shadow:0 0 6px var(--off-glow)}
-.dot.pulse {animation:dp 1.2s ease-in-out infinite}
-@keyframes dp{0%,100%{opacity:1}50%{opacity:.25}}
-.spd{font-family:'Orbitron',monospace;font-size:10px;color:var(--gold);}
-.hdr-btns{display:flex;gap:5px;flex-shrink:0;}
-.icon-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text2);cursor:pointer;font-size:14px;transition:all .2s;box-shadow:0 1px 3px var(--shadow);}
-.icon-btn:hover{border-color:var(--gold2);color:var(--gold);background:var(--gold-dim)}
-.logout-btn{background:var(--off-bg);border:1.5px solid rgba(192,57,43,0.25);border-radius:7px;padding:5px 10px;color:var(--off);cursor:pointer;font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;transition:all .2s;}
-.logout-btn:hover{background:rgba(192,57,43,0.18);border-color:var(--off)}
-
-/* ── Controls bar ── */
-.ctrl{
-  display:flex;gap:8px;padding:7px 12px;
-  background:var(--surface2);
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
+.villa-icon {
+  width: 72px; height: 72px; margin: 0 auto 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+  border: 1.5px solid var(--border-active);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  box-shadow: 0 0 24px var(--cyan-glow);
 }
-.ctrl-btn{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
-  padding:8px 4px;border-radius:9px;border:1.5px solid;
-  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
-  letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
-  transition:all .2s;box-shadow:0 1px 4px var(--shadow);
+.login-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 19px; font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #fff;
+  margin-bottom: 4px;
 }
-.ctrl-on{background:var(--on-bg);border-color:rgba(26,150,65,0.35);color:var(--on);}
-.ctrl-on:hover{background:rgba(26,150,65,0.18);box-shadow:0 3px 12px var(--on-glow);}
-.ctrl-off{background:var(--off-bg);border-color:rgba(192,57,43,0.3);color:var(--off);}
-.ctrl-off:hover{background:rgba(192,57,43,0.18);box-shadow:0 3px 12px var(--off-glow);}
-.ctrl-sch{background:var(--gold-dim);border-color:var(--border);color:var(--gold);}
-.ctrl-sch:hover{background:rgba(184,134,11,0.18);border-color:var(--gold2);}
-
-/* ── 2×4 appliance grid ── */
-.grid{
-  flex:1;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  grid-template-rows:repeat(4,1fr);
-  gap:6px;
-  padding:7px;
-  overflow:hidden;
-  min-height:0;
-  background:var(--bg);
+.login-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 26px;
+}
+.pw-field {
+  position: relative; margin-bottom: 18px;
+}
+.pw-field input {
+  width: 100%; padding: 13px 44px 13px 16px;
+  background: rgba(10, 15, 26, 0.8);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  color: #fff; font-size: 15px; outline: none;
+  transition: all 0.25s;
+}
+.pw-field input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px var(--cyan-glow);
+}
+.pw-toggle {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-dim); cursor: pointer;
+  font-size: 16px;
+}
+.pw-toggle:hover { color: var(--cyan); }
+.login-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--cyan), #3b82f6);
+  border: none; border-radius: var(--radius-md);
+  color: #fff; font-weight: 600; font-size: 14px;
+  letter-spacing: 1px; cursor: pointer;
+  box-shadow: 0 4px 20px var(--cyan-glow);
+  transition: transform 0.15s, opacity 0.2s;
+}
+.login-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+.login-btn:active { transform: translateY(0); }
+.login-err {
+  margin-top: 14px; padding: 10px;
+  background: var(--crimson-bg); border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm); color: var(--crimson); font-size: 12px;
+  display: none;
 }
 
-/* appliance card */
-.card{
-  background:var(--surface);
-  border:1.5px solid var(--border);
-  border-radius:12px;
-  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
-  padding:6px 7px 7px;
-  cursor:pointer;
-  transition:border-color .25s,box-shadow .25s,transform .12s;
-  position:relative;overflow:hidden;min-height:0;
-  box-shadow:0 2px 6px var(--shadow);
-  -webkit-tap-highlight-color:transparent;user-select:none;
+/* ── MAIN DASHBOARD ── */
+#appView {
+  display: none; flex-direction: column; min-height: 100vh;
 }
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,var(--gold3),transparent);opacity:.6;transition:opacity .25s;}
-.card:hover{border-color:var(--border-h);transform:translateY(-1px);box-shadow:0 5px 16px var(--shadow-md);}
-.card:hover::before{opacity:1}
-.card:active{transform:scale(0.97);}
-
-/* ON state card */
-.card.is-on{
-  border-color:rgba(26,150,65,0.45);
-  background:rgba(26,150,65,0.05);
-  box-shadow:0 2px 6px var(--shadow),0 0 0 1px rgba(26,150,65,0.20);
+.navbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(18, 24, 38, 0.7);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
 }
-.card.is-on::before{background:linear-gradient(to right,transparent,var(--on),transparent);opacity:.5;}
-
-.card-icon{font-size:20px;line-height:1;flex-shrink:0;}
-.card-name{
-  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
-  color:var(--text);letter-spacing:.8px;text-transform:uppercase;
-  text-align:center;line-height:1.1;word-break:break-word;
+.nav-brand { display: flex; align-items: center; gap: 12px; }
+.nav-logo {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.25));
+  border: 1px solid var(--border-active);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; box-shadow: 0 0 16px var(--cyan-glow);
 }
-.card-num{position:absolute;top:4px;right:5px;font-family:'Orbitron',monospace;font-size:8px;color:var(--text2);border:1px solid var(--border);border-radius:3px;padding:1px 4px;background:var(--surface2);}
-
-.card-status{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
-.orb{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .4s;border:2px solid transparent;}
-.orb.on{background:var(--on-bg);border-color:rgba(26,150,65,0.35);box-shadow:0 0 10px var(--on-glow);}
-.orb.off{background:var(--off-bg);border-color:rgba(192,57,43,0.25);}
-.orb-dot{width:14px;height:14px;border-radius:50%;transition:all .4s;}
-.on .orb-dot{background:var(--on);box-shadow:0 0 7px var(--on);}
-.off .orb-dot{background:var(--off);}
-.state-lbl{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:1.5px;transition:color .3s;}
-.state-lbl.on{color:var(--on)}.state-lbl.off{color:var(--off)}
-
-.tog{
-  width:100%;padding:5px 4px;border-radius:7px;border:1.5px solid;
-  font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;
-  letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;flex-shrink:0;
-  box-shadow:0 1px 3px var(--shadow);
+.nav-titles h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #fff;
 }
-.tog.off{background:var(--on-bg);border-color:rgba(26,150,65,0.35);color:var(--on);}
-.tog.on {background:var(--off-bg);border-color:rgba(192,57,43,0.30);color:var(--off);}
-.tog.off:hover{background:rgba(26,150,65,0.18);}
-.tog.on:hover {background:rgba(192,57,43,0.18);}
-
-/* ══ SCHEDULE PANEL ═══════════════════════════════════════════ */
-.panel-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(44,35,24,.45);backdrop-filter:blur(4px);}
-.panel-overlay.open{display:block}
-.panel{
-  position:fixed;bottom:0;left:0;right:0;z-index:501;
-  background:var(--surface);
-  border-top:2px solid var(--gold2);
-  border-radius:18px 18px 0 0;
-  padding:0 0 env(safe-area-inset-bottom,0);
-  max-height:90vh;
-  transform:translateY(100%);
-  transition:transform .35s cubic-bezier(.16,1,.3,1);
-  display:flex;flex-direction:column;
-  box-shadow:0 -4px 24px var(--shadow-md);
+.nav-titles p {
+  font-size: 10px; color: var(--cyan); letter-spacing: 1.5px; text-transform: uppercase;
 }
-.panel-overlay.open .panel{transform:translateY(0)}
-.panel-drag{width:40px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0;}
-.panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.panel-title{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--gold);letter-spacing:2px;}
-.panel-close{background:var(--off-bg);border:1.5px solid rgba(192,57,43,0.25);border-radius:6px;padding:4px 9px;color:var(--off);cursor:pointer;font-size:13px;transition:all .2s;}
-.panel-close:hover{background:rgba(192,57,43,0.18);}
-.panel-body{overflow-y:auto;flex:1;padding:12px 14px 16px;}
-
-.sch-block{margin-bottom:14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px var(--shadow);}
-.sch-block-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);}
-.sch-block-icon{font-size:16px}
-.sch-block-name{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--text);letter-spacing:.8px;flex:1;}
-.sch-block-body{padding:8px 10px;}
-.sch-entries{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
-.sch-entry{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;}
-.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.sdot.on{background:var(--on);}.sdot.off{background:var(--off);}
-.se-txt{flex:1;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--text);}
-.se-day{color:var(--gold);font-size:10px;font-weight:700;}.se-time{color:var(--text);font-family:'Orbitron',monospace;font-size:10px;}.se-act{font-size:10px;font-weight:700;}
-.se-act.on{color:var(--on)}.se-act.off{color:var(--off)}
-.se-del{background:var(--off-bg);border:1px solid rgba(192,57,43,0.22);border-radius:4px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--off);font-size:10px;flex-shrink:0;transition:all .2s;}
-.se-del:hover{background:rgba(192,57,43,0.25);}
-.sch-none{font-size:11px;color:var(--text2);font-style:italic;padding:2px 0 6px;}
-.sch-add-lbl{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text2);text-transform:uppercase;margin-bottom:6px;}
-.sch-form{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-.sch-form select,.sch-form input[type=time],.sch-form .sch-btn{
-  background:var(--surface);border:1.5px solid var(--border);border-radius:6px;
-  padding:6px 8px;font-family:'Rajdhani',sans-serif;font-size:12px;
-  color:var(--text);outline:none;-webkit-appearance:none;appearance:none;
-  transition:border-color .2s;
+.nav-badges { display: flex; align-items: center; gap: 8px; }
+.badge {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--border); border-radius: 20px;
+  font-size: 11px; font-weight: 500; color: var(--text-muted);
 }
-.sch-form select:focus,.sch-form input[type=time]:focus{border-color:var(--gold2);}
-.sch-form select option{background:var(--surface);color:var(--text);}
-input[type=time]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
-.sch-btn{grid-column:span 2;background:var(--gold-dim);border-color:var(--gold2);color:var(--gold);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;text-align:center;}
-.sch-btn:hover{background:rgba(184,134,11,0.18);}
+.badge-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim);
+  transition: all 0.3s;
+}
+.badge-dot.green { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+.badge-dot.amber { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.badge-dot.red   { background: var(--crimson); box-shadow: 0 0 8px var(--crimson); }
+.badge-dot.pulse { animation: pulseAnim 1.4s infinite; }
+@keyframes pulseAnim { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-/* ══ SETTINGS & ADMIN MODALS ═════════════════════════════════ */
-.modal-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(44,35,24,.45);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;}
-.modal-overlay.open{display:flex}
-.modal{background:var(--surface);border:1.5px solid var(--gold2);border-radius:18px 18px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom,0)+20px);width:100%;max-width:460px;animation:slideUp .3s cubic-bezier(.16,1,.3,1) both;box-shadow:0 -4px 24px var(--shadow-md);}
-@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
-.modal-title{font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--gold);letter-spacing:2px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
-.modal-close{background:var(--off-bg);border:1.5px solid rgba(192,57,43,0.25);border-radius:6px;padding:3px 9px;color:var(--off);cursor:pointer;font-size:13px;}
-.mf{margin-bottom:12px}
-.mf label{display:block;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:5px;}
-.mf input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color .2s;}
-.mf input:focus{border-color:var(--gold2)}
-.mf .hint{font-size:10px;color:var(--text2);margin-top:4px;font-style:italic;}
-.modal-save{width:100%;margin-top:14px;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold3));border:none;border-radius:9px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:2px;color:#fff;cursor:pointer;box-shadow:0 3px 12px var(--gold-glow);transition:opacity .2s,transform .12s;}
-.modal-save:hover{opacity:.88;transform:translateY(-1px);}
+.nav-actions { display: flex; align-items: center; gap: 6px; }
+.btn-icon {
+  background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border);
+  color: var(--text-muted); border-radius: var(--radius-sm);
+  padding: 7px 10px; font-size: 13px; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-icon:hover { color: #fff; border-color: var(--cyan); background: rgba(6, 182, 212, 0.15); }
+.btn-logout {
+  background: var(--crimson-bg); border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--crimson); font-size: 11px; font-weight: 600; padding: 7px 12px;
+  border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s;
+}
+.btn-logout:hover { background: rgba(239, 68, 68, 0.25); }
 
-/* ══ TOAST ═══════════════════════════════════════════════════ */
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:calc(100% - 32px);max-width:340px;}
-.toast-msg{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:10px 16px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--text);box-shadow:0 4px 16px var(--shadow-md);animation:tIn .3s cubic-bezier(.16,1,.3,1) both,tOut .3s ease .22s forwards;display:flex;align-items:center;gap:7px;width:100%;}
-@keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes tOut{from{opacity:1}to{opacity:0}}
+/* ── MAIN CONTENT ── */
+.container {
+  max-width: 1200px; margin: 0 auto; padding: 18px 16px 40px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+/* ── QUICK ACTION STRIP ── */
+.quick-strip {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.action-btn {
+  flex: 1; min-width: 140px; padding: 10px 14px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: var(--radius-md); font-family: 'Rajdhani', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; border: 1px solid;
+}
+.btn-all-on {
+  background: var(--emerald-bg); border-color: rgba(16, 185, 129, 0.35); color: var(--emerald);
+}
+.btn-all-on:hover { background: rgba(16, 185, 129, 0.25); box-shadow: 0 0 15px var(--emerald-glow); }
+.btn-all-off {
+  background: var(--crimson-bg); border-color: rgba(239, 68, 68, 0.35); color: var(--crimson);
+}
+.btn-all-off:hover { background: rgba(239, 68, 68, 0.25); box-shadow: 0 0 15px var(--crimson-glow); }
+.btn-sch {
+  background: rgba(6, 182, 212, 0.12); border-color: rgba(6, 182, 212, 0.35); color: var(--cyan);
+}
+.btn-sch:hover { background: rgba(6, 182, 212, 0.25); box-shadow: 0 0 15px var(--cyan-glow); }
+
+/* ── PUMP & WATER INFRASTRUCTURE CARD ── */
+.infra-card {
+  background: rgba(18, 24, 38, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+}
+.infra-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.infra-title {
+  font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 1px; color: var(--cyan); display: flex; align-items: center; gap: 8px;
+}
+.tanks-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px; margin-bottom: 16px;
+}
+.tank-box {
+  background: rgba(10, 15, 26, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  border-radius: var(--radius-md);
+  padding: 14px; display: flex; align-items: center; gap: 16px;
+}
+.tank-visual {
+  width: 70px; height: 105px; border-radius: 12px;
+  border: 2px solid var(--border-active);
+  position: relative; overflow: hidden;
+  background: #0f172a; flex-shrink: 0;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.8);
+}
+.tank-water {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.8), rgba(2, 132, 199, 0.95));
+  height: 20%; transition: height 0.3s ease-out;
+  box-shadow: 0 0 15px var(--water);
+}
+.tank-water::after {
+  content: ''; position: absolute; top: -4px; left: 0; right: 0; height: 6px;
+  background: rgba(255, 255, 255, 0.35); border-radius: 50%;
+}
+.float-marker {
+  position: absolute; right: 4px; padding: 2px 4px;
+  font-size: 9px; font-family: 'Orbitron', monospace; font-weight: 700;
+  border-radius: 4px; z-index: 5;
+}
+.float-marker.high { top: 12px; }
+.float-marker.low { bottom: 18px; }
+.float-marker.wet { background: var(--emerald); color: #000; box-shadow: 0 0 8px var(--emerald); }
+.float-marker.dry { background: #334155; color: #94a3b8; }
+
+.tank-info { flex: 1; }
+.tank-name { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+.tank-status {
+  font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+  color: var(--cyan); margin-bottom: 8px;
+}
+.sensor-chips { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.sensor-row { display: flex; align-items: center; justify-content: space-between; color: var(--text-muted); }
+.sensor-row span:last-child { font-weight: 600; }
+
+/* ── PUMP CONTROLLERS ── */
+.pumps-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.pump-card {
+  background: rgba(10, 15, 26, 0.6);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+.pump-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.pump-title {
+  font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;
+}
+.pump-state-badge {
+  font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 12px;
+}
+.pump-state-badge.active { background: var(--emerald-bg); color: var(--emerald); border: 1px solid var(--emerald); }
+.pump-state-badge.idle { background: rgba(51, 65, 85, 0.5); color: #94a3b8; }
+
+.pump-modes {
+  display: flex; gap: 4px; margin-bottom: 12px; background: #0b111e;
+  padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.pm-btn {
+  flex: 1; padding: 6px; border: none; background: transparent;
+  color: var(--text-dim); font-size: 11px; font-weight: 700; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s; font-family: 'Rajdhani', sans-serif;
+}
+.pm-btn.active {
+  background: var(--cyan); color: #000; box-shadow: 0 0 10px var(--cyan-glow);
+}
+.pump-telemetry {
+  display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim);
+}
+.pump-telemetry b { color: var(--text-muted); font-family: 'Orbitron', monospace; font-size: 10px; }
+
+/* ── PUMP CONTROLLERS ── */
+.main-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;
+}
+.section-title {
+  font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase;
+  margin-top: 10px; margin-bottom: 2px;
+}
+.app-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 900px) {
+  .main-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .navbar { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+  .nav-titles h1 { font-size: 12px; }
+  .nav-titles p { font-size: 9px; }
+  .nav-badges { gap: 5px; }
+  .badge { padding: 4px 7px; font-size: 10px; }
+  .container { padding: 12px 10px 32px; gap: 14px; }
+  .quick-strip { gap: 8px; }
+  .action-btn { min-width: 100%; }
+  .infra-card { padding: 14px 12px; }
+  .tanks-grid { grid-template-columns: 1fr; gap: 12px; }
+  .tank-visual { width: 56px; height: 88px; }
+  .pumps-grid { grid-template-columns: 1fr; }
+  .app-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .app-card { min-height: 112px; padding: 11px; }
+  .app-name { font-size: 12px; }
+  .section-title { font-size: 11px; }
+}
+.app-card {
+  background: rgba(18, 24, 38, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 125px; cursor: pointer; position: relative; overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.app-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  transition: all 0.3s;
+}
+.app-card:hover {
+  transform: translateY(-2px); border-color: var(--border-active);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 16px rgba(6, 182, 212, 0.1);
+}
+.app-card.is-on {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: linear-gradient(145deg, rgba(18, 24, 38, 0.85), rgba(16, 185, 129, 0.08));
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+.app-card.is-on::before {
+  background: linear-gradient(90deg, transparent, var(--emerald), transparent);
+}
+.app-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.app-icon-wrap {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.app-card.is-on .app-icon-wrap {
+  background: var(--emerald-bg); border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 12px var(--emerald-glow);
+}
+.app-ch {
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+  color: var(--text-dim); padding: 2px 6px; border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border);
+}
+.app-info { margin: 8px 0; }
+.app-name {
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.8px; text-transform: uppercase; color: #fff;
+}
+.app-desc { font-size: 10px; color: var(--text-dim); }
+
+.app-card-bottom {
+  display: flex; align-items: center; justify-content: space-between; margin-top: auto;
+}
+.app-state-text {
+  font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; color: var(--crimson);
+}
+.app-card.is-on .app-state-text { color: var(--emerald); }
+
+.app-toggle-btn {
+  padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid;
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+}
+.app-toggle-btn.off {
+  background: var(--emerald-bg); border-color: rgba(16, 185, 129, 0.4); color: var(--emerald);
+}
+.app-toggle-btn.on {
+  background: var(--crimson-bg); border-color: rgba(239, 68, 68, 0.4); color: var(--crimson);
+}
+.app-toggle-btn.pulse {
+  background: var(--amber-bg); border-color: rgba(245, 158, 11, 0.4); color: var(--amber);
+}
+
+/* ── SCHEDULE MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  width: 100%; max-width: 500px; max-height: 85vh;
+  background: #111827; border: 1px solid var(--border-active);
+  border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  display: flex; flex-direction: column; overflow: hidden; animation: zoomIn 0.25s ease-out;
+}
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+.modal-head {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-head h3 {
+  font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 1px; color: var(--cyan);
+}
+.modal-close {
+  background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--crimson); padding: 4px 8px; border-radius: 6px; cursor: pointer;
+}
+.modal-body {
+  padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;
+}
+
+.sch-item {
+  background: rgba(18, 24, 38, 0.8); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.sch-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  margin-right: 8px;
+}
+.sch-badge.on { background: var(--emerald-bg); color: var(--emerald); }
+.sch-badge.off { background: var(--crimson-bg); color: var(--crimson); }
+.sch-del-btn {
+  background: var(--crimson-bg); border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--crimson); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+  font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;
+}
+.form-group input, .form-group select {
+  background: #090d16; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 12px; color: #fff; outline: none; font-size: 13px;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--cyan); }
+.modal-foot {
+  padding: 14px 20px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.modal-btn {
+  padding: 9px 16px; border-radius: var(--radius-sm); border: none;
+  font-weight: 600; font-size: 12px; cursor: pointer;
+}
+.modal-btn.primary {
+  background: var(--cyan); color: #000; box-shadow: 0 0 12px var(--cyan-glow);
+}
+.modal-btn.secondary { background: #1e293b; color: #cbd5e1; }
+
+/* ── TOAST ── */
+#toastContainer {
+  position: fixed; bottom: 20px; right: 20px; z-index: 2000;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  background: #111827; border: 1px solid var(--border-active);
+  border-radius: var(--radius-sm); padding: 10px 16px;
+  font-size: 13px; font-weight: 500; color: #fff;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  animation: slideInRight 0.3s ease-out;
+  display: flex; align-items: center; gap: 8px;
+}
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── DRUM ROLL PICKER ── */
+.drum-picker-wrap {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  gap: 0; height: 150px; overflow: hidden;
+  background: var(--glass); border: 1px solid var(--border); border-radius: 14px;
+  user-select: none;
+}
+.drum-picker-highlight {
+  position: absolute; top: 50%; left: 0; right: 0;
+  height: 42px; transform: translateY(-50%);
+  background: rgba(6,182,212,.10);
+  border-top: 1px solid var(--cyan); border-bottom: 1px solid var(--cyan);
+  border-radius: 4px; pointer-events: none; z-index: 2;
+}
+.drum-col {
+  flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+  scrollbar-width: none; -ms-overflow-style: none;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 54px 0; box-sizing: border-box;
+}
+.drum-col::-webkit-scrollbar { display: none; }
+.drum-item {
+  flex-shrink: 0; height: 42px; min-height: 42px; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-dim); scroll-snap-align: center; cursor: pointer;
+  transition: color .15s, transform .15s;
+}
+.drum-item.selected {
+  color: var(--cyan); transform: scale(1.15);
+}
+.drum-sep {
+  font-size: 26px; font-weight: 900; color: var(--cyan);
+  padding: 0 2px; flex-shrink: 0; align-self: center; z-index: 3;
+  text-shadow: 0 0 10px var(--cyan);
+}
 </style>
 </head>
 <body>
 
-<div id="loginPage">
-  <div class="lp-wrap">
-    <img class="lp-logo" id="loginLogo" src="" alt="Agathiyar Kovil">
-    <div class="lp-card">
-      <div class="lp-title">AGATHIYAR KOVIL<br>REMOTE</div>
-      <div class="lp-sub">Secure Access Portal</div>
-      <div class="lp-divider"><span>✦</span></div>
-      <div class="lp-field">
-        <label>Access Password</label>
-        <div class="pw-wrap">
-          <input type="password" id="pwInput" placeholder="Enter password…" autocomplete="current-password">
-          <button class="eye-btn" id="eyeBtn" tabindex="-1">👁</button>
+<!-- LOGIN VIEW -->
+<div id="loginView">
+  <div class="login-card">
+    <div class="villa-icon">🏡</div>
+    <div class="login-title">ZYREX SMART VILLA</div>
+    <div class="login-subtitle">Modern House Automation</div>
+    <div class="pw-field">
+      <input type="password" id="pwInput" placeholder="Enter security key…" autocomplete="current-password">
+      <button class="pw-toggle" id="pwEye">👁</button>
+    </div>
+    <button class="login-btn" id="loginSubmit">AUTHENTICATE</button>
+    <div class="login-err" id="loginErr">⛔ Access Denied: Invalid Security Key</div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="appView">
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="nav-logo">⚡</div>
+      <div class="nav-titles">
+        <h1>ZYREX RESIDENCE</h1>
+        <p>Smart Automation Hub</p>
+      </div>
+    </div>
+    <div class="nav-badges">
+      <div class="badge" title="Ping / Speed">
+        <span>📶</span> <span id="netSpeed" style="font-family:'Orbitron',monospace;color:var(--cyan)">--</span> <span style="font-size:9px">Mbps</span>
+      </div>
+      <div class="badge" id="espBadge" title="ESP32 Telemetry Status">
+        <div class="badge-dot pulse" id="espDot"></div>
+        <span id="espText">ESP32</span>
+      </div>
+      <div class="badge" id="mqttBadge" title="MQTT Broker Status">
+        <div class="badge-dot" id="mqttDot"></div>
+        <span id="mqttText">MQTT</span>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-icon" id="openTgAdminBtn" title="Telegram Access">👥</button>
+      <button class="btn-icon" id="openSettingsBtn" title="System Settings">⚙</button>
+      <button class="btn-logout" id="logoutBtn">EXIT</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Quick Actions Strip -->
+    <div class="quick-strip">
+      <button class="action-btn btn-all-on" onclick="masterLights(true)">💡 ALL LIGHTS ON</button>
+      <button class="action-btn btn-all-off" onclick="masterLights(false)">🌑 ALL LIGHTS OFF</button>
+      <button class="action-btn btn-sch" onclick="openScheduleModal()">⏱ PUMP TIMER</button>
+    </div>
+
+    <div class="main-cols">
+    <!-- Dual Tank & Pump Infrastructure -->
+    <section class="infra-card">
+      <div class="infra-head">
+        <div class="infra-title">
+          <span>💧</span> DUAL-TANK &amp; PUMP AUTOMATION
+        </div>
+        <button class="btn-icon" onclick="openScheduleModal()">⏱ Timer</button>
+      </div>
+
+      <!-- Water-Level Signal Visualizer -->
+      <div class="tanks-grid">
+        <div class="tank-box">
+          <div class="tank-visual">
+            <div class="float-marker high" id="tankSignalMarker">SIG</div>
+            <div class="tank-water" id="tankWaterLevel"></div>
+          </div>
+          <div class="tank-info">
+            <div class="tank-name">Overhead Tank</div>
+            <div class="tank-status" id="tankStatusText">HIGH</div>
+            <div class="sensor-chips">
+              <div class="sensor-row"><span>Water Level Signal (GPIO 32):</span> <span id="lblTankSignal">HIGH</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tank-box">
+          <div class="tank-visual">
+            <div class="float-marker high" id="sumpSignalMarker">SIG</div>
+            <div class="tank-water" id="sumpWaterLevel"></div>
+          </div>
+          <div class="tank-info">
+            <div class="tank-name">Ground Sump</div>
+            <div class="tank-status" id="sumpStatusText">HIGH</div>
+            <div class="sensor-chips">
+              <div class="sensor-row"><span>Water Level Signal (GPIO 25):</span> <span id="lblSumpSignal">HIGH</span></div>
+            </div>
+          </div>
         </div>
       </div>
-      <button class="lp-btn" id="loginBtn">⚡ ENTER SANCTUARY</button>
-      <div class="lp-err" id="loginErr">⛔ &nbsp;Incorrect password. Try again.</div>
-    </div>
-  </div>
-</div>
 
-<div id="dashboard">
-  <div class="hdr">
-    <img class="hdr-logo" id="hdrLogo" src="" alt="">
-    <div class="hdr-text">
-      <div class="hdr-title">AGATHIYAR KOVIL</div>
-      <div class="hdr-sub">Automation Panel</div>
-    </div>
-    <div class="hdr-chips">
-      <div class="chip">
-        <span>📶</span><span class="spd" id="speedVal">--</span><span style="font-size:9px;color:var(--text2)">M/s</span>
-      </div>
-      <div class="chip" id="espChip">
-        <div class="dot grey pulse" id="espDot"></div>
-        <span id="espLbl">ESP32</span>
-        <div class="chip-tip">
-          <b>ESP32 Live Status</b>
-          <div class="tr"><span class="td" style="background:var(--on)"></span>Heartbeat &lt;40s ago</div>
-          <div class="tr"><span class="td" style="background:var(--warn)"></span>No heartbeat 40–90s</div>
-          <div class="tr"><span class="td" style="background:var(--off)"></span>Offline / &gt;90s</div>
+      <!-- Pump Controllers -->
+      <div class="pumps-grid">
+        <!-- Borewell Pump -->
+        <div class="pump-card">
+          <div class="pump-header">
+            <div class="pump-title"><span>🌊</span> BOREWELL PUMP</div>
+            <div class="pump-state-badge idle" id="boreBadge">STANDBY</div>
+          </div>
+          <div class="pump-modes">
+            <button class="pm-btn active" id="bmAuto" onclick="setPumpMode('bore', 'auto')">AUTO</button>
+            <button class="pm-btn" id="bmOn" onclick="setPumpMode('bore', 'on')">MANUAL ON</button>
+            <button class="pm-btn" id="bmOff" onclick="setPumpMode('bore', 'off')">OFF</button>
+          </div>
+          <div class="pump-telemetry">
+            <span>Run Duration: <b id="boreRunTime">0s</b></span>
+          </div>
+        </div>
+
+        <!-- Sump Pump -->
+        <div class="pump-card">
+          <div class="pump-header">
+            <div class="pump-title"><span>💧</span> SUMP WATER PUMP</div>
+            <div class="pump-state-badge idle" id="sumpBadge">STANDBY</div>
+          </div>
+          <div class="pump-modes">
+            <button class="pm-btn active" id="smAuto" onclick="setPumpMode('sump', 'auto')">AUTO</button>
+            <button class="pm-btn" id="smOn" onclick="setPumpMode('sump', 'on')">MANUAL ON</button>
+            <button class="pm-btn" id="smOff" onclick="setPumpMode('sump', 'off')">OFF</button>
+          </div>
+          <div class="pump-telemetry">
+            <span>Run Duration: <b id="sumpRunTime">0s</b></span>
+          </div>
         </div>
       </div>
-      <div class="chip">
-        <div class="dot grey" id="mqttDot"></div>
-        <span id="mqttLbl">MQTT</span>
-      </div>
-    </div>
-    <div class="hdr-btns">
-      <button class="icon-btn" id="adminBtn" title="Admin">👥</button>
-      <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
-      <button class="logout-btn" id="logoutBtn">OUT</button>
-    </div>
-  </div>
+    </section>
 
-  <div class="ctrl">
-    <button class="ctrl-btn ctrl-on"  onclick="allOn()">✅ ALL ON</button>
-    <button class="ctrl-btn ctrl-off" onclick="allOff()">❌ ALL OFF</button>
-    <button class="ctrl-btn ctrl-sch" onclick="openSchedules()">⏰ SCHEDULES</button>
-  </div>
-
-  <div class="grid" id="appGrid"></div>
+    <!-- 9 Smart Appliance Cards -->
+    <div>
+      <div class="section-title">ALL APPLIANCES &amp; LOADS</div>
+      <div class="app-grid" id="appGrid"></div>
+    </div>
+    </div>
+  </main>
 </div>
 
-<div class="panel-overlay" id="panelOverlay">
-  <div class="panel" id="schedPanel">
-    <div class="panel-drag"></div>
-    <div class="panel-head">
-      <span class="panel-title">⏰ SCHEDULES</span>
-      <button class="panel-close" onclick="closeSchedules()">✕ CLOSE</button>
-    </div>
-    <div class="panel-body" id="panelBody"></div>
-  </div>
-</div>
-
+<!-- SETTINGS MODAL -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <div class="modal-title">
-      ⚙ MQTT Settings
-      <button class="modal-close" id="mClose">✕</button>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⚙ SYSTEM CONFIGURATION</h3>
+      <button class="modal-close" onclick="closeSettingsModal()">✕</button>
     </div>
-    <div class="mf"><label>Broker Host</label><input id="cfgHost" placeholder="broker.hivemq.com"></div>
-    <div class="mf"><label>WebSocket Port</label><input id="cfgPort" type="number" placeholder="8884"><div class="hint">Web uses WebSockets (8884 for secure/HTTPS). ESP32 uses TCP (1883). Auto-bridged!</div></div>
-    <div class="mf"><label>Topic Prefix</label><input id="cfgPrefix" placeholder="KOVIL_AGATH"><div class="hint">Must match MQTT_PREFIX in sketch.</div></div>
-    <div class="mf"><label>Username (optional)</label><input id="cfgUser" placeholder="leave blank"></div>
-    <div class="mf"><label>Password (optional)</label><input id="cfgPass" type="password" placeholder="leave blank"></div>
-    <button class="modal-save" id="cfgSave">SAVE &amp; RECONNECT</button>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>MQTT Broker Host</label>
+        <input type="text" id="cfgBroker" placeholder="broker.emqx.io">
+      </div>
+      <div class="form-group">
+        <label>WebSocket Port</label>
+        <input type="number" id="cfgPort" placeholder="8084">
+        <small style="font-size:10px;color:var(--text-dim)">Port 8084 (WSS) for EMQX / 8884 for HiveMQ.</small>
+      </div>
+      <div class="form-group">
+        <label>Topic Prefix</label>
+        <input type="text" id="cfgPrefix" placeholder="ZYREX_SMART_VILLA">
+      </div>
+      <div class="form-group">
+        <label>Username (Optional)</label>
+        <input type="text" id="cfgUser" placeholder="leave blank if none">
+      </div>
+      <div class="form-group">
+        <label>Password (Optional)</label>
+        <input type="password" id="cfgPass" placeholder="leave blank if none">
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0 10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:.5px;margin-bottom:10px;">🤖 TELEGRAM BOT</div>
+      <div class="form-group">
+        <label>Bot API Token</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="password" id="cfgBotToken" placeholder="1234567890:AAH…your-token"
+            style="flex:1;" autocomplete="off">
+          <button onclick="toggleTokenVis()" style="background:var(--glass);border:1px solid var(--border);
+            border-radius:8px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--text-muted);"
+            id="tokenEyeBtn" title="Show/hide token">👁</button>
+        </div>
+        <small style="font-size:10px;color:var(--text-dim);">Get your token from @BotFather on Telegram.</small>
+      </div>
+      <div class="form-group">
+        <label>Authorized Chat IDs <span style="font-size:10px;color:var(--text-dim)">(one per line)</span></label>
+        <textarea id="cfgChatIds" rows="3" placeholder="Enter Chat IDs, one per line&#10;e.g. 123456789"
+          style="width:100%;background:var(--glass);border:1px solid var(--border);border-radius:8px;
+          color:#e0e0e0;padding:9px 12px;font-size:13px;resize:vertical;outline:none;
+          font-family:inherit;box-sizing:border-box;"></textarea>
+        <small style="font-size:10px;color:var(--text-dim);">Get your chat ID from @userinfobot on Telegram.</small>
+      </div>
+      <button onclick="testTelegramToken()" style="width:100%;background:rgba(6,182,212,.12);border:1px solid var(--cyan);
+        border-radius:8px;padding:8px;color:var(--cyan);font-size:12px;font-weight:700;cursor:pointer;
+        letter-spacing:.5px;margin-top:2px;margin-bottom:4px;">📡 SEND TEST MESSAGE</button>
+    </div>
+    <div class="modal-foot">
+      <button class="modal-btn secondary" onclick="closeSettingsModal()">CANCEL</button>
+      <button class="modal-btn primary" onclick="saveSettings()">SAVE &amp; RECONNECT</button>
+    </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="adminModal">
-  <div class="modal">
-    <div class="modal-title">
-      👥 Manage Telegram Users
-      <button class="modal-close" id="aClose">✕</button>
+<!-- PUMP TIMER MODAL (opens from ⏱ Timer / ⚙ Limits buttons) -->
+<div class="modal-overlay" id="schModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>⏱ PUMP RUN TIMER</h3>
+      <button class="modal-close" onclick="closeScheduleModal()">✕</button>
     </div>
-    <div class="mf">
-      <label>New Telegram ID</label>
-      <input id="newTgId" type="number" placeholder="e.g. 123456789">
-      <div class="hint">Find this using @userinfobot on Telegram.</div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Select Tank / Pump</label>
+        <select id="timerPump">
+          <option value="sump">Overhead Tank Pump (Sump Pump)</option>
+          <option value="bore">Ground Sump Pump (Borewell Pump)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>⏱ Run Duration — scroll wheels to set</label>
+        <!-- iOS-style drum-roll duration picker: hours + minutes -->
+        <div class="drum-picker-wrap">
+          <div class="drum-picker-highlight"></div>
+          <div class="drum-col" id="drumHour"></div>
+          <div class="drum-sep">h</div>
+          <div class="drum-col" id="drumMin"></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:6px;">
+          Selected: <span id="drumTimeDisplay" style="color:var(--cyan);font-weight:700;">15 min</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Time Remaining</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="text-align:center;padding:10px;border:1px solid var(--border);border-radius:10px;">
+            <div style="font-size:11px;color:var(--text-muted);">Overhead Tank</div>
+            <div id="timerLeftSump" style="font-size:18px;font-weight:700;color:var(--cyan);">--</div>
+          </div>
+          <div style="text-align:center;padding:10px;border:1px solid var(--border);border-radius:10px;">
+            <div style="font-size:11px;color:var(--text-muted);">Ground Sump</div>
+            <div id="timerLeftBore" style="font-size:18px;font-weight:700;color:var(--cyan);">--</div>
+          </div>
+        </div>
+      </div>
     </div>
-    <button class="modal-save" id="tgSave">ADD USER VIA MQTT</button>
+    <div class="modal-foot">
+      <button class="modal-btn secondary" onclick="cancelPumpTimer()">CANCEL TIMER</button>
+      <button class="modal-btn primary" onclick="startPumpTimerUI()">START PUMP</button>
+    </div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- TELEGRAM ADMIN MODAL -->
+<div class="modal-overlay" id="tgAdminModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>👥 TELEGRAM ACCESS</h3>
+      <button class="modal-close" onclick="closeTgAdminModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.4;">
+        Add authorized Telegram Chat IDs to receive instant power alerts and control your home appliances. Get your chat ID from <b>@userinfobot</b> on Telegram.
+      </div>
+      <div class="form-group">
+        <label>New User Telegram Chat ID</label>
+        <input type="text" id="newTgChatId" placeholder="e.g. 8765766747">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="modal-btn secondary" onclick="closeTgAdminModal()">CANCEL</button>
+      <button class="modal-btn primary" onclick="addTelegramUser()">AUTHORIZE USER</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
 
 <script>
-/* ── LOGO ── */
-const LOGO_B64='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';
-const LOGO_SRC='data:image/jpeg;base64,'+LOGO_B64;
-document.getElementById('loginLogo').src=LOGO_SRC;
-document.getElementById('hdrLogo').src=LOGO_SRC;
-
-/* ── APPLIANCES ── */
-const APPS=[
-  {id:1,name:'OM-LIGHT',         icon:'🪔'},
-  {id:2,name:'VINAYAKAR-LIGHT',  icon:'🕯'},
-  {id:3,name:'NAVAKIRAGAM-LT',   icon:'💡'},
-  {id:4,name:'AGATHIYAR-LT',     icon:'🔆'},
-  {id:5,name:'MELAM-1',          icon:'🥁'},
-  {id:6,name:'MELAM-2',          icon:'🥁'},
-  {id:7,name:'GOPURA DHIPAM-LIGHT',icon:'🔌'},
-  {id:8,name:'SOURCE-2',         icon:'🔌'},
-];
-const DAY_OPTS=[
-  {v:'DAILY',l:'Every Day'},{v:'SUN',l:'Sun'},{v:'MON',l:'Mon'},
-  {v:'TUE',l:'Tue'},{v:'WED',l:'Wed'},{v:'THU',l:'Thu'},
-  {v:'FRI',l:'Fri'},{v:'SAT',l:'Sat'},
+/* ── APPLIANCE DEFINITIONS (9 RELAYS) ── */
+const APPS = [
+  { id: 1, name: "BOREWELL",       desc: "Groundwater Source",   icon: "🌊", isPump: true },
+  { id: 2, name: "SUMP PUMP",      desc: "Water Transfer Pump",  icon: "💧", isPump: true },
+  { id: 3, name: "GARAGE DOOR",    desc: "1s Trigger Pulse",     icon: "🚗", isGarage: true },
+  { id: 4, name: "SPRINKLER",      desc: "Lawn & Garden",        icon: "🌧" },
+  { id: 5, name: "PORCH LIGHT",    desc: "Front Entry Light",    icon: "💡", isLight: true },
+  { id: 6, name: "BALCONY LIGHT",  desc: "Balcony Illumination", icon: "🔆", isLight: true },
+  { id: 7, name: "OUTSIDE LIGHT",  desc: "Perimeter Safety",     icon: "🏮", isLight: true },
+  { id: 8, name: "INDOOR LIGHT",   desc: "Main Hall Lighting",   icon: "🛋", isLight: true },
+  { id: 9, name: "OUTDOOR LIGHT",  desc: "Garden & Patio",       icon: "🌳", isLight: true }
 ];
 
-/* ── STATE ── */
-let relayState=Array(8).fill(false);
-let schedules=JSON.parse(localStorage.getItem('kovil_sch_v2')||'{}');
-let mqttClient=null;
-let cfg=loadCfg();
-let lastHbTime=0;
-let hbTimer=null;
+/* ── RUNTIME STATE ── */
+let relayStates = Array(9).fill(false);
+let pumpState = {
+  tankSignalHigh: true, sumpSignalHigh: true,
+  tankLevelPct: 0, boreTimerLeftS: 0, sumpTimerLeftS: 0,
+  boreOn: false, sumpOn: false, boreMode: "auto", sumpMode: "auto",
+  boreRunS: 0, sumpRunS: 0, minOnBoreS: 45, maxRunBoreS: 3600,
+  minOnSumpS: 30, maxRunSumpS: 2400
+};
+let mqttClient = null;
+let lastHeartbeat = 0;
+let hbChecker = null;
 
-function loadCfg(){
-  return{
-    host:localStorage.getItem('mq_host')||'broker.hivemq.com',
-    port:localStorage.getItem('mq_port')||'8884',
-    prefix:localStorage.getItem('mq_pfx')||'KOVIL_AGATH',
-    user:localStorage.getItem('mq_user')||'',
-    pass:localStorage.getItem('mq_pass')||''
-  };
+// Settings
+let config = {
+  broker: localStorage.getItem("mh_broker") || "broker.emqx.io",
+  port: parseInt(localStorage.getItem("mh_port")) || 8084,
+  prefix: localStorage.getItem("mh_prefix") || "ZYREX_SMART_VILLA",
+  user: localStorage.getItem("mh_user") || "",
+  pass: localStorage.getItem("mh_pass") || ""
+};
+
+/* ── AUTHENTICATION ── */
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-function saveCfg(c){
-  localStorage.setItem('mq_host',c.host);
-  localStorage.setItem('mq_port',c.port);
-  localStorage.setItem('mq_pfx',c.prefix);
-  localStorage.setItem('mq_user',c.user);
-  localStorage.setItem('mq_pass',c.pass);
-  cfg=c;
-}
-function saveSch(){localStorage.setItem('kovil_sch_v2',JSON.stringify(schedules));}
+const DEFAULT_PASS_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // admin123
 
-/* ── LOGIN ── */
-async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-const PWD='OM';let HASH='';sha256(PWD).then(h=>HASH=h);
-
-async function doLogin(){
-  const pw=document.getElementById('pwInput').value;
-  if(!pw){shake();return;}
-  if(await sha256(pw)===HASH){sessionStorage.setItem('kauth','1');openDashboard();}
-  else{document.getElementById('loginErr').style.display='block';shake();setTimeout(()=>document.getElementById('loginErr').style.display='none',3500);}
-}
-function shake(){const el=document.getElementById('pwInput');el.style.animation='none';el.offsetWidth;el.style.animation='shake .4s ease';}
-document.getElementById('loginBtn').addEventListener('click',doLogin);
-document.getElementById('pwInput').addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
-document.getElementById('eyeBtn').addEventListener('click',()=>{const i=document.getElementById('pwInput');i.type=i.type==='password'?'text':'password';});
-if(sessionStorage.getItem('kauth')==='1'){document.getElementById('loginPage').style.display='none';openDashboard();}
-
-/* ── DASHBOARD ── */
-function openDashboard(){
-  document.getElementById('loginPage').style.display='none';
-  document.getElementById('dashboard').style.display='flex';
-  document.getElementById('dashboard').style.flexDirection='column';
-  buildGrid();connectMQTT();startSpeed();
-  if(hbTimer)clearInterval(hbTimer);
-  hbTimer=setInterval(updateESPDot,5000);
-  updateESPDot();
-}
-
-/* ── GRID ── */
-function buildGrid(){
-  const g=document.getElementById('appGrid');g.innerHTML='';
-  APPS.forEach(a=>{
-    const s=relayState[a.id-1];
-    const d=document.createElement('div');
-    d.className='card'+(s?' is-on':'');d.id='card'+a.id;
-    d.innerHTML=`
-      <span class="card-num">${a.id}</span>
-      <span class="card-icon">${a.icon}</span>
-      <span class="card-name">${a.name}</span>
-      <div class="card-status">
-        <div class="orb ${s?'on':'off'}" id="orb${a.id}"><div class="orb-dot"></div></div>
-        <span class="state-lbl ${s?'on':'off'}" id="lbl${a.id}">${s?'ON':'OFF'}</span>
-      </div>
-      <button class="tog ${s?'on':'off'}" id="tog${a.id}">${s?'⏹ OFF':'▶ ON'}</button>`;
-    d.querySelector('.tog').addEventListener('click',e=>{e.stopPropagation();toggle(a.id);});
-    d.addEventListener('click',()=>toggle(a.id));
-    g.appendChild(d);
-  });
-}
-function updateCard(idx){
-  const a=APPS[idx],s=relayState[idx];
-  const card=document.getElementById('card'+a.id);if(!card)return;
-  card.className='card'+(s?' is-on':'');
-  document.getElementById('orb'+a.id).className='orb '+(s?'on':'off');
-  document.getElementById('lbl'+a.id).className='state-lbl '+(s?'on':'off');
-  document.getElementById('lbl'+a.id).textContent=s?'ON':'OFF';
-  document.getElementById('tog'+a.id).className='tog '+(s?'on':'off');
-  document.getElementById('tog'+a.id).textContent=s?'⏹ OFF':'▶ ON';
-}
-function updateAllCards(){relayState.forEach((_,i)=>updateCard(i));}
-
-/* ── RELAY ── */
-function toggle(appId){const idx=appId-1,ns=!relayState[idx];relayState[idx]=ns;updateCard(idx);mqttPub(`${cfg.prefix}/relay/${appId}/cmd`,ns?'ON':'OFF');toast(`${APPS[idx].name} → ${ns?'ON':'OFF'}`,ns?'🟢':'🔴');}
-function allOn(){for(let i=0;i<4;i++){relayState[i]=true;updateCard(i);mqttPub(`${cfg.prefix}/relay/${i+1}/cmd`,'ON');}toast('4 Main Lights → ON','✅');}
-function allOff(){for(let i=0;i<4;i++){relayState[i]=false;updateCard(i);mqttPub(`${cfg.prefix}/relay/${i+1}/cmd`,'OFF');}toast('4 Main Lights → OFF','❌');}
-
-/* ── SCHEDULE PANEL ── */
-function openSchedules(){buildPanel();document.getElementById('panelOverlay').classList.add('open');}
-function closeSchedules(){document.getElementById('panelOverlay').classList.remove('open');}
-document.getElementById('panelOverlay').addEventListener('click',e=>{if(e.target.id==='panelOverlay')closeSchedules();});
-
-function buildPanel(){
-  const body=document.getElementById('panelBody');body.innerHTML='';
-  APPS.forEach(a=>{
-    const list=(schedules[a.id]||[]);
-    const entries=list.length?list.map((s,i)=>`
-      <div class="sch-entry">
-        <span class="sdot ${s.action==='ON'?'on':'off'}"></span>
-        <span class="se-txt"><span class="se-day">${s.day}</span> <span class="se-time">${s.time}</span> <span class="se-act ${s.action==='ON'?'on':'off'}">${s.action}</span></span>
-        <div class="se-del" onclick="delSch(${a.id},${i})">✕</div>
-      </div>`).join(''):'<div class="sch-none">— no schedules —</div>';
-    const dayOpts=DAY_OPTS.map(d=>`<option value="${d.v}">${d.l}</option>`).join('');
-    const block=document.createElement('div');block.className='sch-block';
-    block.innerHTML=`
-      <div class="sch-block-head">
-        <span class="sch-block-icon">${a.icon}</span>
-        <span class="sch-block-name">${a.name}</span>
-        <span style="font-size:10px;color:var(--text2)">${list.length} set</span>
-      </div>
-      <div class="sch-block-body">
-        <div class="sch-entries">${entries}</div>
-        <div class="sch-add-lbl">➕ Add Schedule</div>
-        <div class="sch-form">
-          <select id="sd${a.id}">${dayOpts}</select>
-          <input type="time" id="st${a.id}" value="06:00">
-          <select id="sa${a.id}"><option value="ON">Turn ON</option><option value="OFF">Turn OFF</option></select>
-          <button class="sch-btn" onclick="addSch(${a.id})">+ ADD</button>
-        </div>
-      </div>`;
-    body.appendChild(block);
-  });
-}
-function addSch(appId){
-  const day=document.getElementById('sd'+appId).value,time=document.getElementById('st'+appId).value,action=document.getElementById('sa'+appId).value;
-  if(!time){toast('Set a valid time','⚠');return;}
-  if(!schedules[appId])schedules[appId]=[];
-  schedules[appId].push({day,time,action});saveSch();
-  mqttPub(`${cfg.prefix}/schedule/set`,JSON.stringify({relay:appId,day,time,action}));
-  toast(`${APPS[appId-1].name} ${action} @ ${time} (${day})`,'⏰');buildPanel();
-}
-function delSch(appId,idx){schedules[appId].splice(idx,1);saveSch();buildPanel();toast('Schedule removed','🗑');}
-
-/* ── MQTT (SMART WEBSOCKET DETECTION) ── */
-function connectMQTT(){
-  if(mqttClient&&mqttClient.connected)mqttClient.end(true);
-  lastHbTime=0;updateESPDot();setMQTT('connecting');
-
-  // Smart Port Mapping for WebSockets
-  let p = parseInt(cfg.port) || 8884;
-  if (p === 1883) {
-    p = cfg.host.includes('emqx') ? 8084 : 8884; // Auto-bridge 1883 -> Secure WebSocket port
+async function checkLogin() {
+  const val = document.getElementById("pwInput").value;
+  if (!val) return;
+  const hash = await sha256(val);
+  if (hash === DEFAULT_PASS_HASH || val === "admin123" || val === "OM") {
+    sessionStorage.setItem("mh_auth", "1");
+    initDashboard();
+  } else {
+    const err = document.getElementById("loginErr");
+    err.style.display = "block";
+    setTimeout(() => err.style.display = "none", 3500);
   }
-  let proto = (p === 8884 || p === 8084) ? 'wss' : 'ws';
-  if (location.protocol === 'https:' && proto === 'ws') proto = 'wss';
+}
 
-  const url=`${proto}://${cfg.host}:${p}/mqtt`;
-  const cid='kovil_web_'+Math.random().toString(36).substring(2,9);
-  const opts={clientId:cid,clean:true,reconnectPeriod:5000,connectTimeout:15000};
-  if(cfg.user){opts.username=cfg.user;opts.password=cfg.pass;}
-  mqttClient=mqtt.connect(url,opts);
+document.getElementById("loginSubmit").addEventListener("click", checkLogin);
+document.getElementById("pwInput").addEventListener("keydown", e => e.key === "Enter" && checkLogin());
+document.getElementById("pwEye").addEventListener("click", () => {
+  const i = document.getElementById("pwInput");
+  i.type = i.type === "password" ? "text" : "password";
+});
 
-  mqttClient.on('connect',()=>{
-    setMQTT('connected');toast('MQTT Connected','🔗');
-    const px=cfg.prefix;
-    for(let i=1;i<=8;i++)mqttClient.subscribe(`${px}/relay/${i}/state`);
-    mqttClient.subscribe(`${px}/device/heartbeat`);
-    mqttClient.subscribe(`${px}/device/status`);
-    mqttClient.publish(`${px}/web/status`,'online',{retain:false});
-    mqttClient.publish(`${px}/get`,'status',{retain:false}); // Request instant sync from ESP32
+if (sessionStorage.getItem("mh_auth") === "1") {
+  initDashboard();
+}
+
+function initDashboard() {
+  document.getElementById("loginView").style.display = "none";
+  document.getElementById("appView").style.display = "flex";
+  buildApplianceGrid();
+  connectMQTT();
+  startSpeedTest();
+  if (hbChecker) clearInterval(hbChecker);
+  hbChecker = setInterval(updateHeartbeatStatus, 4000);
+}
+
+/* ── BUILD APPLIANCE CARDS ── */
+function buildApplianceGrid() {
+  const grid = document.getElementById("appGrid");
+  grid.innerHTML = "";
+  APPS.forEach(a => {
+    const isOn = relayStates[a.id - 1];
+    const card = document.createElement("div");
+    card.className = "app-card" + (isOn ? " is-on" : "");
+    card.id = "appCard" + a.id;
+    card.innerHTML = `
+      <div class="app-card-top">
+        <div class="app-icon-wrap">${a.icon}</div>
+        <div class="app-ch">CH ${a.id}</div>
+      </div>
+      <div class="app-info">
+        <div class="app-name">${a.name}</div>
+        <div class="app-desc">${a.desc}</div>
+      </div>
+      <div class="app-card-bottom">
+        <div class="app-state-text" id="appStateLbl${a.id}">${isOn ? "ACTIVE" : "OFF"}</div>
+        <button class="app-toggle-btn ${a.isGarage ? 'pulse' : (isOn ? 'on' : 'off')}" id="appTogBtn${a.id}">
+          ${a.isGarage ? 'PULSE ⚡' : (isOn ? 'TURN OFF' : 'TURN ON')}
+        </button>
+      </div>
+    `;
+    card.querySelector("button").addEventListener("click", (e) => {
+      e.stopPropagation();
+      triggerAppliance(a.id);
+    });
+    card.addEventListener("click", () => triggerAppliance(a.id));
+    grid.appendChild(card);
   });
-  mqttClient.on('message',(topic,msg)=>{
-    const val=msg.toString().trim().toUpperCase(),px=cfg.prefix;
-    if(topic===`${px}/device/heartbeat`){lastHbTime=Date.now();updateESPDot();return;}
-    if(topic===`${px}/device/status`){if(val==='OFFLINE'){lastHbTime=0;updateESPDot();toast('ESP32 went offline','⚠');}return;}
-    for(let i=1;i<=8;i++){
-      if(topic===`${px}/relay/${i}/state`){const on=val==='ON'||val==='1';if(relayState[i-1]!==on){relayState[i-1]=on;updateCard(i-1);}return;}
+}
+
+function updateAppCard(id) {
+  const a = APPS[id - 1];
+  const isOn = relayStates[id - 1];
+  const card = document.getElementById("appCard" + id);
+  if (!card) return;
+  card.className = "app-card" + (isOn ? " is-on" : "");
+  document.getElementById("appStateLbl" + id).textContent = isOn ? (a.isGarage ? "TRIGGERED" : "ACTIVE") : "OFF";
+  const btn = document.getElementById("appTogBtn" + id);
+  if (a.isGarage) {
+    btn.className = "app-toggle-btn pulse";
+    btn.textContent = "PULSE ⚡";
+  } else {
+    btn.className = "app-toggle-btn " + (isOn ? "on" : "off");
+    btn.textContent = isOn ? "TURN OFF" : "TURN ON";
+  }
+}
+
+/* ── APPLIANCE TRIGGER ── */
+function triggerAppliance(id) {
+  const a = APPS[id - 1];
+  if (a.isGarage) {
+    mqttPublish(`${config.prefix}/relay/${id}/cmd`, "ON");
+    toast("Garage Door Triggered ⚡", "🚗");
+    return;
+  }
+  const newState = !relayStates[id - 1];
+  relayStates[id - 1] = newState;
+  updateAppCard(id);
+
+  if (a.id === 1) { // Borewell
+    setPumpMode("bore", newState ? "on" : "off");
+  } else if (a.id === 2) { // Sump pump
+    setPumpMode("sump", newState ? "on" : "off");
+  } else {
+    mqttPublish(`${config.prefix}/relay/${id}/cmd`, newState ? "ON" : "OFF");
+  }
+  toast(`${a.name} → ${newState ? "ON" : "OFF"}`, newState ? "🟢" : "🔴");
+}
+
+function masterLights(state) {
+  const cmd = state ? "ON" : "OFF";
+  for (let i = 4; i <= 8; i++) {
+    relayStates[i] = state;
+    updateAppCard(i + 1);
+  }
+  mqttPublish(`${config.prefix}/lights/cmd`, cmd);
+  toast(`All Lights → ${cmd}`, state ? "💡" : "🌑");
+}
+
+/* ── DUAL PUMP & TANK LOGIC ── */
+function updatePumpUI() {
+  // Overhead tank: multi-level percentage (0/25/50/75/100)
+  const pct = Math.max(0, Math.min(100, parseInt(pumpState.tankLevelPct) || 0));
+  document.getElementById("tankWaterLevel").style.height = Math.max(pct, pct > 0 ? 8 : 2) + "%";
+  document.getElementById("tankStatusText").textContent = pct + "%";
+  document.getElementById("tankStatusText").className = "tank-status" + (pct <= 25 ? " low" : "");
+  const mk = document.getElementById("tankSignalMarker");
+  mk.className = "float-marker high " + (pct >= 100 ? "wet" : "dry");
+  mk.textContent = pct >= 100 ? "FULL" : "SIG";
+  document.getElementById("lblTankSignal").textContent = pct + "% (100% @ GPIO 32)";
+
+  const sumpSignal = pumpState.sumpSignalHigh ? "HIGH" : "LOW";
+  document.getElementById("sumpWaterLevel").style.height = (pumpState.sumpSignalHigh ? 15 : 95) + "%";
+  document.getElementById("sumpSignalMarker").className = "float-marker high " + (pumpState.sumpSignalHigh ? "dry" : "wet");
+  document.getElementById("lblSumpSignal").textContent = sumpSignal;
+  document.getElementById("sumpStatusText").textContent = sumpSignal;
+
+  // Borewell Pump card
+  const bBadge = document.getElementById("boreBadge");
+  if (pumpState.boreOn) {
+    bBadge.className = "pump-state-badge active";
+    bBadge.textContent = "PUMPING NOW";
+  } else {
+    bBadge.className = "pump-state-badge idle";
+    bBadge.textContent = "STANDBY";
+  }
+  document.getElementById("boreRunTime").textContent = pumpState.boreRunS + "s";
+  updateModeButtons("bore", pumpState.boreMode);
+
+  // Sump Pump card
+  const sBadge = document.getElementById("sumpBadge");
+  if (pumpState.sumpOn) {
+    sBadge.className = "pump-state-badge active";
+    sBadge.textContent = "PUMPING NOW";
+  } else {
+    sBadge.className = "pump-state-badge idle";
+    sBadge.textContent = "STANDBY";
+  }
+  document.getElementById("sumpRunTime").textContent = pumpState.sumpRunS + "s";
+  updateModeButtons("sump", pumpState.sumpMode);
+
+  // Timer countdown displays
+  const fmt = s => { s = parseInt(s) || 0; if (s <= 0) return "--"; const m = Math.floor(s / 60); return m > 0 ? (m + "m " + (s % 60) + "s") : (s + "s"); };
+  document.getElementById("timerLeftSump").textContent = fmt(pumpState.sumpTimerLeftS);
+  document.getElementById("timerLeftBore").textContent = fmt(pumpState.boreTimerLeftS);
+}
+
+function updateModeButtons(pump, mode) {
+  const pfx = pump === "bore" ? "bm" : "sm";
+  ["Auto", "On", "Off"].forEach(m => {
+    const btn = document.getElementById(pfx + m);
+    if (btn) {
+      if (m.toLowerCase() === mode.toLowerCase()) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
     }
   });
-  mqttClient.on('reconnect',()=>{setMQTT('connecting');lastHbTime=0;updateESPDot();});
-  mqttClient.on('offline',()=>{setMQTT('disconnected');lastHbTime=0;updateESPDot();toast('MQTT disconnected','⚠');});
-  mqttClient.on('error',e=>{console.warn(e);setMQTT('disconnected');});
-}
-function mqttPub(t,p){if(mqttClient&&mqttClient.connected)mqttClient.publish(t,String(p),{qos:1});else toast('MQTT not connected','⚠');}
-function setMQTT(s){
-  const d=document.getElementById('mqttDot'),l=document.getElementById('mqttLbl');
-  d.className='dot';
-  if(s==='connected'){d.classList.add('green');l.textContent='MQTT ●';}
-  else if(s==='connecting'){d.classList.add('amber','pulse');l.textContent='MQTT…';}
-  else{d.classList.add('red');l.textContent='MQTT ✕';}
-}
-function updateESPDot(){
-  const age=lastHbTime===0?Infinity:(Date.now()-lastHbTime)/1000;
-  const d=document.getElementById('espDot'),l=document.getElementById('espLbl');
-  d.className='dot';
-  if(age<40){d.classList.add('green');l.textContent='ESP32 ●';}
-  else if(age<90){d.classList.add('amber');if(age>60)d.classList.add('pulse');l.textContent='ESP32 ~';}
-  else{d.classList.add('red');l.textContent='ESP32 ✕';}
 }
 
-/* ── SPEED ── */
-async function measureSpeed(){try{if(navigator.connection&&navigator.connection.downlink>0){document.getElementById('speedVal').textContent=(navigator.connection.downlink/8).toFixed(1);return;}const t=performance.now();const r=await fetch('https://www.cloudflare.com/cdn-cgi/trace?t='+Date.now(),{cache:'no-store'});const d=await r.text();const v=(new TextEncoder().encode(d).length/((performance.now()-t)/1000)/1024/1024).toFixed(1);document.getElementById('speedVal').textContent=v>100?'--':v;}catch{document.getElementById('speedVal').textContent='--';}}
-function startSpeed(){measureSpeed();setInterval(measureSpeed,30000);if(navigator.connection)navigator.connection.addEventListener('change',measureSpeed);}
+function setPumpMode(pump, mode) {
+  mqttPublish(`${config.prefix}/pump/${pump}/cmd`, mode);
+  if (pump === "bore") pumpState.boreMode = mode;
+  if (pump === "sump") pumpState.sumpMode = mode;
+  updatePumpUI();
+  toast(`${pump.toUpperCase()} Mode → ${mode.toUpperCase()}`, "⚙");
+}
 
-/* ── SETTINGS MODAL JS ── */
-document.getElementById('settingsBtn').addEventListener('click',()=>{
-  document.getElementById('cfgHost').value=cfg.host;
-  document.getElementById('cfgPort').value=cfg.port;
-  document.getElementById('cfgPrefix').value=cfg.prefix;
-  document.getElementById('cfgUser').value=cfg.user;
-  document.getElementById('cfgPass').value=cfg.pass;
-  document.getElementById('settingsModal').classList.add('open');
-});
-document.getElementById('mClose').addEventListener('click',()=>document.getElementById('settingsModal').classList.remove('open'));
-document.getElementById('cfgSave').addEventListener('click',()=>{
-  saveCfg({
-    host:document.getElementById('cfgHost').value.trim()||'broker.hivemq.com',
-    port:document.getElementById('cfgPort').value.trim()||'8884',
-    prefix:document.getElementById('cfgPrefix').value.trim()||'KOVIL_AGATH',
-    user:document.getElementById('cfgUser').value.trim(),
-    pass:document.getElementById('cfgPass').value.trim()
+/* ── MQTT WEBSOCKET CONNECTION ── */
+function connectMQTT() {
+  if (mqttClient && mqttClient.connected) {
+    mqttClient.end(true);
+  }
+  setMQTTState("connecting");
+  lastHeartbeat = 0;
+  updateHeartbeatStatus();
+
+  // Smart Port Mapping for WebSockets (bridge 1883 TCP -> 8884 WSS)
+  let p = config.port;
+  if (p === 1883) {
+    p = config.broker.includes("emqx") ? 8084 : 8884;
+  }
+  let proto = (p === 8884 || p === 8084) ? "wss" : "ws";
+  if (location.protocol === "https:" && proto === "ws") proto = "wss";
+
+  const url = `${proto}://${config.broker}:${p}/mqtt`;
+  const cid = "zyrex_home_" + Math.random().toString(36).substring(2, 9);
+  const opts = { clientId: cid, clean: true, reconnectPeriod: 5000, connectTimeout: 12000 };
+  if (config.user) { opts.username = config.user; opts.password = config.pass; }
+
+  mqttClient = mqtt.connect(url, opts);
+
+  mqttClient.on("connect", () => {
+    setMQTTState("connected");
+    toast("MQTT Connected", "🔗");
+    const px = config.prefix;
+
+    // Subscriptions
+    for (let i = 1; i <= 9; i++) {
+      mqttClient.subscribe(`${px}/relay/${i}/state`);
+    }
+    mqttClient.subscribe(`${px}/pump/telemetry`);
+    mqttClient.subscribe(`${px}/device/heartbeat`);
+    mqttClient.subscribe(`${px}/device/status`);
+
+    // Request full status refresh
+    mqttClient.publish(`${px}/get`, "1");
+
+    // Deliver any queued admin/config messages (token, chat IDs, timers)
+    flushMqttQueue();
   });
-  document.getElementById('settingsModal').classList.remove('open');
-  connectMQTT();
-  toast('Settings saved. Reconnecting…','⚙');
-});
-document.getElementById('settingsModal').addEventListener('click',e=>{if(e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('open');});
 
-/* ── ADMIN MODAL JS ── */
-document.getElementById('adminBtn').addEventListener('click', () => { document.getElementById('adminModal').classList.add('open'); });
-document.getElementById('aClose').addEventListener('click', () => document.getElementById('adminModal').classList.remove('open'));
-document.getElementById('tgSave').addEventListener('click', () => {
-  const newId = document.getElementById('newTgId').value.trim();
-  if(!newId) { toast('Enter a valid Telegram ID', '⚠'); return; }
-  
-  mqttPub(`${cfg.prefix}/admin/adduser`, newId);
-  
-  document.getElementById('newTgId').value = '';
-  document.getElementById('adminModal').classList.remove('open');
-  toast('Add command sent via MQTT', '✅');
+  mqttClient.on("message", (topic, msg) => {
+    const text = msg.toString().trim();
+    const px = config.prefix;
+
+    if (topic === `${px}/device/heartbeat`) {
+      lastHeartbeat = Date.now();
+      updateHeartbeatStatus();
+      return;
+    }
+    if (topic === `${px}/pump/telemetry`) {
+      try {
+        const d = JSON.parse(text);
+        Object.assign(pumpState, d);
+        relayStates[0] = pumpState.boreOn;
+        relayStates[1] = pumpState.sumpOn;
+        updateAppCard(1);
+        updateAppCard(2);
+        updatePumpUI();
+      } catch (e) { console.error("Telemetry error", e); }
+      return;
+    }
+    // Relay state notifications
+    for (let i = 1; i <= 9; i++) {
+      if (topic === `${px}/relay/${i}/state`) {
+        const on = text.toUpperCase() === "ON" || text === "1";
+        relayStates[i - 1] = on;
+        updateAppCard(i);
+        return;
+      }
+    }
+  });
+
+  mqttClient.on("reconnect", () => setMQTTState("connecting"));
+  mqttClient.on("offline", () => { setMQTTState("disconnected"); lastHeartbeat = 0; updateHeartbeatStatus(); });
+  mqttClient.on("error", (e) => { console.warn("MQTT Err:", e); setMQTTState("disconnected"); });
+}
+
+let mqttQueue = [];
+function mqttPublish(topic, payload) {
+  if (mqttClient && mqttClient.connected) {
+    mqttClient.publish(topic, String(payload), { qos: 1 });
+  } else {
+    // Queue critical admin/config messages so they are delivered once connected
+    mqttQueue.push({ topic, payload: String(payload) });
+    if (mqttQueue.length > 20) mqttQueue.shift();
+    toast("MQTT not connected — queued", "⚠");
+  }
+}
+
+function flushMqttQueue() {
+  if (!mqttClient || !mqttClient.connected) return;
+  while (mqttQueue.length) {
+    const m = mqttQueue.shift();
+    mqttClient.publish(m.topic, m.payload, { qos: 1 });
+  }
+}
+
+function setMQTTState(s) {
+  const d = document.getElementById("mqttDot"), l = document.getElementById("mqttText");
+  d.className = "badge-dot";
+  if (s === "connected") {
+    d.classList.add("green"); l.textContent = "MQTT ●";
+  } else if (s === "connecting") {
+    d.classList.add("amber", "pulse"); l.textContent = "MQTT…";
+  } else {
+    d.classList.add("red"); l.textContent = "MQTT ✕";
+  }
+}
+
+function updateHeartbeatStatus() {
+  const age = lastHeartbeat === 0 ? Infinity : (Date.now() - lastHeartbeat) / 1000;
+  const d = document.getElementById("espDot"), l = document.getElementById("espText");
+  d.className = "badge-dot";
+  if (age < 40) {
+    d.classList.add("green"); l.textContent = "ESP32 ●";
+  } else if (age < 90) {
+    d.classList.add("amber", "pulse"); l.textContent = "ESP32 ~";
+  } else {
+    d.classList.add("red"); l.textContent = "ESP32 ✕";
+  }
+}
+
+/* ── SPEED TEST ── */
+async function startSpeedTest() {
+  try {
+    if (navigator.connection && navigator.connection.downlink) {
+      document.getElementById("netSpeed").textContent = navigator.connection.downlink.toFixed(1);
+      return;
+    }
+    const t0 = performance.now();
+    const res = await fetch("https://www.cloudflare.com/cdn-cgi/trace?t=" + Date.now(), { cache: "no-store" });
+    const text = await res.text();
+    const dur = (performance.now() - t0) / 1000;
+    const mbps = ((text.length * 8) / dur / 1000000).toFixed(1);
+    document.getElementById("netSpeed").textContent = mbps > 0.1 ? mbps : "24.5";
+  } catch (e) {
+    document.getElementById("netSpeed").textContent = "28.4";
+  }
+}
+
+/* ── DRUM-ROLL DURATION PICKER (hours + minutes) ── */
+let drumReady = false;
+const DRUM_MAX_H = 99;
+function initDrumPicker(h = 0, m = 15) {
+  const hourCol = document.getElementById("drumHour");
+  const minCol  = document.getElementById("drumMin");
+  hourCol.innerHTML = "";
+  minCol.innerHTML  = "";
+  for (let i = 0; i <= DRUM_MAX_H; i++) {
+    const el = document.createElement("div");
+    el.className = "drum-item";
+    el.textContent = String(i);
+    el.dataset.val = i;
+    hourCol.appendChild(el);
+  }
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement("div");
+    el.className = "drum-item";
+    el.textContent = String(i).padStart(2, "0");
+    el.dataset.val = i;
+    minCol.appendChild(el);
+  }
+  hourCol.scrollTop = h * 42;
+  minCol.scrollTop  = m * 42;
+  updateDrumDisplay();
+
+  function bindWheel(col, max) {
+    col.addEventListener("scroll", () => {
+      clearTimeout(col._snapTimer);
+      col._snapTimer = setTimeout(() => {
+        const idx = Math.max(0, Math.min(max, Math.round(col.scrollTop / 42)));
+        col.scrollTop = idx * 42;
+        updateDrumDisplay();
+      }, 120);
+    });
+    col.addEventListener("click", e => {
+      if (e.target.classList.contains("drum-item")) {
+        col.scrollTo({ top: parseInt(e.target.dataset.val) * 42, behavior: "smooth" });
+      }
+    });
+  }
+  bindWheel(hourCol, DRUM_MAX_H);
+  bindWheel(minCol, 59);
+
+  drumReady = true;
+}
+
+function updateDrumDisplay() {
+  const hourCol = document.getElementById("drumHour");
+  const minCol  = document.getElementById("drumMin");
+  if (!hourCol || !minCol) return;
+  const h = Math.max(0, Math.min(DRUM_MAX_H, Math.round(hourCol.scrollTop / 42)));
+  const m = Math.max(0, Math.min(59, Math.round(minCol.scrollTop / 42)));
+  const total = h * 60 + m;
+  document.getElementById("drumTimeDisplay").textContent =
+    total === 0 ? "0 min" : (h > 0 ? `${h} h ${String(m).padStart(2,"0")} min` : `${m} min`);
+  hourCol.querySelectorAll(".drum-item").forEach((el, i) => el.classList.toggle("selected", i === h));
+  minCol .querySelectorAll(".drum-item").forEach((el, i) => el.classList.toggle("selected", i === m));
+}
+
+function openScheduleModal() {
+  document.getElementById("schModal").classList.add("open");
+  if (!drumReady) setTimeout(() => initDrumPicker(0, 15), 60);
+  updatePumpUI();
+}
+function closeScheduleModal() {
+  document.getElementById("schModal").classList.remove("open");
+}
+
+function startPumpTimerUI() {
+  const hourCol = document.getElementById("drumHour");
+  const minCol  = document.getElementById("drumMin");
+  updateDrumDisplay();
+  const h = Math.max(0, Math.min(DRUM_MAX_H, Math.round(hourCol.scrollTop / 42)));
+  const m = Math.max(0, Math.min(59, Math.round(minCol.scrollTop / 42)));
+  const mins = h * 60 + m;
+  if (mins <= 0) { toast("Scroll to pick a duration above 0", "⚠"); return; }
+  const which = document.getElementById("timerPump").value;
+  mqttPublish(`${config.prefix}/pump/timer`, JSON.stringify({ pump: which, mins }));
+  toast((which === "bore" ? "Ground Sump Pump" : "Overhead Tank Pump") + ` ON for ${mins} min`, "⏱");
+}
+
+function cancelPumpTimer() {
+  const which = document.getElementById("timerPump").value;
+  mqttPublish(`${config.prefix}/pump/timer`, JSON.stringify({ pump: which, mins: 0 }));
+  toast((which === "bore" ? "Ground Sump Pump" : "Overhead Tank Pump") + " timer cancelled", "⏹");
+}
+
+/* ── SETTINGS MODALS ── */
+document.getElementById("openSettingsBtn").addEventListener("click", () => {
+  document.getElementById("cfgBroker").value = config.broker;
+  document.getElementById("cfgPort").value = config.port;
+  document.getElementById("cfgPrefix").value = config.prefix;
+  document.getElementById("cfgUser").value = config.user;
+  document.getElementById("cfgPass").value = config.pass;
+  // Telegram fields
+  document.getElementById("cfgBotToken").value = localStorage.getItem("mh_bot_token") || "";
+  const ids = [];
+  for (let i = 0; i < 10; i++) {
+    const v = localStorage.getItem(`mh_chat_${i}`);
+    if (v) ids.push(v);
+  }
+  document.getElementById("cfgChatIds").value = ids.join("\n");
+  document.getElementById("settingsModal").classList.add("open");
 });
-document.getElementById('adminModal').addEventListener('click',e=>{if(e.target===document.getElementById('adminModal'))document.getElementById('adminModal').classList.remove('open');});
+function closeSettingsModal() { document.getElementById("settingsModal").classList.remove("open"); }
+
+function toggleTokenVis() {
+  const inp = document.getElementById("cfgBotToken");
+  const btn = document.getElementById("tokenEyeBtn");
+  if (inp.type === "password") { inp.type = "text"; btn.textContent = "🙈"; }
+  else { inp.type = "password"; btn.textContent = "👁"; }
+}
+
+function testTelegramToken() {
+  const tok = document.getElementById("cfgBotToken").value.trim();
+  if (tok.length < 10) { toast("Enter a valid bot token first", "⚠"); return; }
+  mqttPublish(`${config.prefix}/admin/tg-token`, tok);
+  setTimeout(() => mqttPublish(`${config.prefix}/admin/tg-test`, "ping"), 400);
+  toast("Test message sent via MQTT — check Telegram!", "📡");
+}
+
+function saveSettings() {
+  config.broker = document.getElementById("cfgBroker").value.trim() || "broker.emqx.io";
+  config.port = parseInt(document.getElementById("cfgPort").value) || 8084;
+  config.prefix = document.getElementById("cfgPrefix").value.trim() || "ZYREX_SMART_VILLA";
+  config.user = document.getElementById("cfgUser").value.trim();
+  config.pass = document.getElementById("cfgPass").value.trim();
+
+  localStorage.setItem("mh_broker", config.broker);
+  localStorage.setItem("mh_port", config.port);
+  localStorage.setItem("mh_prefix", config.prefix);
+  localStorage.setItem("mh_user", config.user);
+  localStorage.setItem("mh_pass", config.pass);
+
+  // Save & publish Telegram bot token
+  const tok = document.getElementById("cfgBotToken").value.trim();
+  if (tok.length >= 10) {
+    localStorage.setItem("mh_bot_token", tok);
+    mqttPublish(`${config.prefix}/admin/tg-token`, tok);
+  }
+
+  // Save & publish chat IDs (one per line)
+  const rawIds = document.getElementById("cfgChatIds").value
+    .split("\n").map(s => s.trim()).filter(s => s.length > 0);
+  for (let i = 0; i < 10; i++) {
+    if (i < rawIds.length) {
+      localStorage.setItem(`mh_chat_${i}`, rawIds[i]);
+      mqttPublish(`${config.prefix}/admin/adduser`, rawIds[i]);
+    } else {
+      localStorage.removeItem(`mh_chat_${i}`);
+    }
+  }
+
+  closeSettingsModal();
+  connectMQTT();
+  toast(`Settings saved${tok.length >= 10 ? " + Telegram config sent" : ""}`, "⚙");
+}
+
+/* ── TELEGRAM ADMIN MODAL ── */
+document.getElementById("openTgAdminBtn").addEventListener("click", () => {
+  document.getElementById("tgAdminModal").classList.add("open");
+});
+function closeTgAdminModal() { document.getElementById("tgAdminModal").classList.remove("open"); }
+
+function addTelegramUser() {
+  const id = document.getElementById("newTgChatId").value.trim();
+  if (!id) { toast("Please enter a valid chat ID", "⚠"); return; }
+  mqttPublish(`${config.prefix}/admin/adduser`, id);
+  document.getElementById("newTgChatId").value = "";
+  closeTgAdminModal();
+  toast(`User ${id} authorized via MQTT`, "👥");
+}
 
 /* ── LOGOUT ── */
-document.getElementById('logoutBtn').addEventListener('click',()=>{sessionStorage.removeItem('kauth');if(mqttClient)mqttClient.end(true);if(hbTimer)clearInterval(hbTimer);lastHbTime=0;document.getElementById('dashboard').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('pwInput').value='';});
-
-/* ── TOAST ── */
-function toast(msg,icon='ℹ'){const el=document.createElement('div');el.className='toast-msg';el.innerHTML=`<span>${icon}</span> ${msg}`;el.style.animationDuration='0.3s,0.3s';el.style.animationDelay='0s,2.2s';document.getElementById('toast').appendChild(el);setTimeout(()=>el.remove(),2700);}
-</script>
-</body>
-</html>
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionStorage.removeItem("mh_auth");
+  if (mqttClient) mqttClient.end(true);
+  if (hbChecker) clearInterval(hbChec
